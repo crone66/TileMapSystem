@@ -105,6 +105,11 @@ namespace TileMapSystem
         {
             int newGridRow = (int)Math.Floor((double)currentTileRow / (double)tileRowCount);
             int newGridColumn = (int)Math.Floor((double)currentTileColumn / (double)tileColumnCount);
+            if (TileMathHelper.IsOutOfRange(newGridRow, newGridColumn, gridRowCount, gridColumnCount))
+            {
+                newGridRow = TileMathHelper.ConvertToTileIndex(newGridRow, gridRowCount);
+                newGridColumn = TileMathHelper.ConvertToTileIndex(newGridColumn, gridColumnCount);
+            }
             currentMapId = TileMathHelper.ToId(newGridRow, newGridColumn, gridColumnCount);
             tileRow = TileMathHelper.ConvertToTileIndex(currentTileRow, tileRowCount);
             tileColumn = TileMathHelper.ConvertToTileIndex(currentTileColumn, tileColumnCount);
@@ -124,8 +129,8 @@ namespace TileMapSystem
             ScreenWidth = screenWidth;
             ScreenHeight = screenHeight;
 
-            int screenColumnCount = screenWidth / tileSize;
-            int screenRowCount = screenHeight / tileSize;
+            int screenColumnCount = (screenWidth / tileSize) + 1;
+            int screenRowCount = (screenHeight / tileSize) + 1;
             int[,] tilesInScreen = new int[screenRowCount, screenColumnCount];
 
             int posRow = tileRow + (screenRowCount / 2);
@@ -134,10 +139,10 @@ namespace TileMapSystem
             int negColumn = tileColumn - (screenColumnCount / 2);
 
             int rowIndex = 0;
-            for (int r = negRow; r < posRow; r++)
+            for (int r = negRow; r < posRow + 1; r++)
             {
                 int columnIndex = 0;
-                for (int c = negColumn; c < posColumn; c++)
+                for (int c = negColumn; c < posColumn + 1; c++)
                 {
                     int newMapIndex = currentMapIndex;
                     int realRow = r;
