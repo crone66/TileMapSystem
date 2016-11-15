@@ -8,7 +8,7 @@ using System.Collections.Generic;
 using System.Linq;
 namespace TileMapSystem
 {
-    public class StreamedTileMap : TileMap
+    public class StreamedTileMap
     {
         private List<TileMapPart> maps;
         private int gridColumnCount;
@@ -162,6 +162,24 @@ namespace TileMapSystem
 
             return tilesInScreen;
         }
+
+        public int GetTile(int row, int column)
+        {
+            int newGridRow = (int)Math.Floor((double)row / (double)tileRowCount);
+            int newGridColumn = (int)Math.Floor((double)column / (double)tileColumnCount);
+            if (TileMathHelper.IsOutOfRange(newGridRow, newGridColumn, gridRowCount, gridColumnCount))
+            {
+                newGridRow = TileMathHelper.ConvertToTileIndex(newGridRow, gridRowCount);
+                newGridColumn = TileMathHelper.ConvertToTileIndex(newGridColumn, gridColumnCount);
+            }
+
+            int tileMapId = TileMathHelper.ToId(newGridRow, newGridColumn, gridColumnCount);
+            int tileRow = TileMathHelper.ConvertToTileIndex(row, tileRowCount);
+            int tileColumn = TileMathHelper.ConvertToTileIndex(column, tileColumnCount);
+            int currentMapIndex = maps.FindIndex(m => m.Id == tileMapId);
+            return maps[currentMapIndex].MapSurface[tileRow, tileColumn];
+        }
+
 
         private void Resize()
         {
