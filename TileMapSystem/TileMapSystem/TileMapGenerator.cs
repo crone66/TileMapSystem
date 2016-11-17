@@ -4,6 +4,7 @@
  * Date: 12.11.2016
  */
 using System;
+using System.Collections.Generic;
 
 namespace TileMapSystem
 {
@@ -11,6 +12,9 @@ namespace TileMapSystem
     {
         private Random random;
         private int seed;
+        private GeneratorSettings settings;
+        private AreaSpread[] spreads;
+
         public TileMapGenerator()
         {
 
@@ -62,15 +66,20 @@ namespace TileMapSystem
             else if (random == null)
                 throw new ArgumentOutOfRangeException();
 
+            this.settings = settings;
+            this.spreads = areas;
+
             double tilesPerGrid = Math.Round(settings.MeterPerGrid / settings.MeterPerTile);
             int gridsPerRow = (int)Math.Ceiling(GetMapSize(settings) / tilesPerGrid);
 
             int GridLocationX = (int)Math.Ceiling(startLocationX / tilesPerGrid);
             int GridLocationY = (int)Math.Ceiling(startLocationY / tilesPerGrid);
 
+            int[][,] edgeOverrides = new int[9][,];
             int[][,] maps = new int[9][,];
             for (int i = 0; i < maps.Length; i++)
             {
+                edgeOverrides[i] = new int[(int)tilesPerGrid, (int)tilesPerGrid];
                 maps[i] = new int[(int)tilesPerGrid, (int)tilesPerGrid];
             }
 
@@ -88,21 +97,27 @@ namespace TileMapSystem
             suroundingGrids[7] = TileMathHelper.CalculateGridTranslation(0, 1, GridLocationX, GridLocationY, gridsPerRow, gridsPerRow);
             suroundingGrids[8] = TileMathHelper.CalculateGridTranslation(-1, 1, GridLocationX, GridLocationY, gridsPerRow, gridsPerRow);
 
-            StreamedTileMap streamedTileMap = new StreamedTileMap(startLocationY, startLocationX, gridsPerRow, gridsPerRow, (int)tilesPerGrid, (int)tilesPerGrid, settings.TileSize);
-
-
+            StreamedTileMap streamedTileMap = new StreamedTileMap(this, startLocationY, startLocationX, gridsPerRow, gridsPerRow, (int)tilesPerGrid, (int)tilesPerGrid, settings.TileSize);
+            //Create Map
             for (int i = 0; i < suroundingGrids.Length; i++)
             {
                 random = new Random(suroundingGrids[i] * settings.Seed);
                 for (int j = 0; j < areas.Length; j++)
                 {
-                    CreateLayerOne(i, maps, (int)tilesPerGrid, (int)tilesPerGrid, settings.TileSize, settings.MeterPerTile, areas[j], settings.RadiusOfCylinder);
+                    CreateLayerOne(i, maps, edgeOverrides,(int)tilesPerGrid, (int)tilesPerGrid, settings.TileSize, settings.MeterPerTile, areas[j], settings.RadiusOfCylinder);
                 }
-
-
             }
 
-            DefragmentMaps(maps);
+            //DefragementMap and add edgenoise
+            DefragmentMaps(maps, areas, suroundingGrids);
+
+            //Merge edgeOverrides
+            for (int i = 0; i < maps.Length; i++)
+            {
+                maps[i] = TileMathHelper.MergeMaps(maps[i], edgeOverrides[i]);
+            }
+
+            //create TileMapPart
             for (int i = 0; i < maps.Length; i++)
             {
                 int gridId = suroundingGrids[i];
@@ -118,6 +133,11 @@ namespace TileMapSystem
 
 
             return streamedTileMap;
+        }
+
+        public StreamedTileMap GenerateMap(int tileLocationX, int tileLocationY)
+        {
+            return GenerateMap(settings, spreads, tileLocationX, tileLocationY);
         }
 
         private int[,] PopulateMap(GeneratorSettings settings)
@@ -146,7 +166,7 @@ namespace TileMapSystem
             return (int)Math.Round(u / settings.MeterPerTile);
         }
 
-        private void CreateLayerOne(int mapIndex, int[][,] maps, int rowCount, int columnCount, int tileSize, float meterPerTiles, AreaSpread area, bool allowEdgeOverflow)
+        private void CreateLayerOne(int mapIndex, int[][,] maps, int[][,] edgeOverrides, int rowCount, int columnCount, int tileSize, float meterPerTiles, AreaSpread area, bool allowEdgeOverflow)
         {
             int tilesChanged = 0;
             int tileCount = rowCount * columnCount;
@@ -159,7 +179,7 @@ namespace TileMapSystem
                 if (maps[mapIndex][row, column] == 0 || maps[mapIndex][row, column] == area.Id)
                 {
                     if (area.SpreadType == SpreadOption.Circle)
-                        tilesChanged += CreateCircleArea(mapIndex, maps, row, column, rowCount, columnCount, minRadius, tileSize, meterPerTiles, area.Id, allowEdgeOverflow, area.UseEdgeNoise);
+                        tilesChanged += CreateCircleArea(mapIndex, maps, edgeOverrides, row, column, rowCount, columnCount, minRadius, tileSize, meterPerTiles, area.Id, allowEdgeOverflow, area.UseEdgeNoise);
                 }
             }
         }
@@ -218,7 +238,7 @@ namespace TileMapSystem
             return modified;
         }
 
-        private int CreateCircleArea(int mapIndex, int[][,] maps, int rowIndex, int columnIndex, int rowCount, int columnCount, int radius, int tileSize, float metersPerTile, int areaId, bool allowEdgeOverflow, bool useEdgeNoise)
+        private int CreateCircleArea(int mapIndex, int[][,] maps, int[][,] edgeOverrides, int rowIndex, int columnIndex, int rowCount, int columnCount, int radius, int tileSize, float metersPerTile, int areaId, bool allowEdgeOverflow, bool useEdgeNoise)
         {
             int modified = 0;
             int minRadiusTile = (int)Math.Ceiling(radius / metersPerTile);
@@ -255,13 +275,16 @@ namespace TileMapSystem
                         }
                     }
 
-                    if (TryModifyField(x, y, r, c, realColumn, realRow, tileSize, minRadiusPx, maps[currentMapIndex], areaId))
+                    if (mapIndex == currentMapIndex)
                     {
-                        if (useEdgeNoise)
+                        if (TryModifyField(x, y, r, c, realColumn, realRow, tileSize, minRadiusPx, maps[currentMapIndex], areaId))
                         {
-                            int[] allowedDirections = CheckDirections(r, c, rowCount, columnCount, maps[currentMapIndex]);
-                            modified += 1 + AddEdgeNoise(r, c, rowCount, columnCount, areaId, 1f, allowedDirections, currentMapIndex, maps);
+                            modified++;
                         }
+                    }
+                    else
+                    {
+                        TryModifyField(x, y, r, c, realColumn, realRow, tileSize, minRadiusPx, edgeOverrides[currentMapIndex], areaId);
                     }
                 }
             }
@@ -283,77 +306,56 @@ namespace TileMapSystem
             return false;
         }
 
-        private int AddEdgeNoise(int row, int column, int rowCount, int columnCount, int areaId, float percentage, int[] allowedDirection, int mapIndex, int[][,] maps)
+        private void AddEdgeNoise(int row, int column, int rowCount, int columnCount, int areaId, float percentage, List<Direction> allowedDirection, int[,] map)
         {
-            int modified = 0;
-            float calculatedPercentage = random.Next(0, 100) / 100f;
-            if(percentage >= calculatedPercentage)
+            if (allowedDirection.Count > 0)
             {
-                int result = random.Next(0, allowedDirection.Length);
-                if (result <= 1)
-                    row += allowedDirection[result];
-                else
-                    column += allowedDirection[result];
-
-                if (percentage / 2f >= (random.Next(0, 100) / 100f))
+                float calculatedPercentage = random.Next(0, 100) / 100f;
+                if (percentage >= calculatedPercentage)
                 {
-                    allowedDirection[result] = 0;
-
-                    bool goAhead = false;
-                    for (int i = 0; i < allowedDirection.Length; i++)
+                    //replace allowedDirections
+                    int result = random.Next(0, allowedDirection.Count);
+                    if(allowedDirection[result].Axis == DirectionAxis.Horizontal)
                     {
-                        if (allowedDirection[i] != 0)
-                        {
-                            goAhead = true;
-                            break;
-                        }
-                    }
-
-                    if(!goAhead)
-                    {
-                        return modified;
-                    }
-                }
-
-                int realRow = row;
-                int realColumn = column;
-                int currentMapIndex = mapIndex;
-                if(TileMathHelper.IsOutOfRange(row, column, rowCount, columnCount))
-                {
-                    currentMapIndex = TileMathHelper.GetMapIndex(row, column, rowCount, columnCount, mapIndex);
-                    if (currentMapIndex >= 0)
-                    {
-                        realRow = TileMathHelper.ConvertToTileIndex(row, rowCount);
-                        realColumn = TileMathHelper.ConvertToTileIndex(column, columnCount);
+                        column += allowedDirection[result].Value;
                     }
                     else
                     {
-                        percentage -= 0.01f;
-                        return modified + AddEdgeNoise(row, column, rowCount, columnCount, areaId, percentage, allowedDirection, mapIndex, maps);
+                        row += allowedDirection[result].Value;
                     }
-                }
-               
-                if(maps[currentMapIndex][realRow, realColumn] == 0)
-                {
-                    maps[currentMapIndex][realRow, realColumn] = areaId;
-                    modified++;
-                }
 
-                percentage -= 0.01f;
-                return modified + AddEdgeNoise(row, column, rowCount, columnCount, areaId, percentage, allowedDirection, mapIndex, maps);
+                    if (TileMathHelper.IsOutOfRange(row, column, rowCount, columnCount))
+                        return;
+
+                    allowedDirection = CheckDirections(row, column, rowCount, columnCount, map);
+
+                    if (map[row, column] == 0)
+                    {
+                        map[row, column] = areaId;
+                    }
+
+                    percentage -= 0.01f;
+                    AddEdgeNoise(row, column, rowCount, columnCount, areaId, percentage, allowedDirection, map);
+                }
             }
-
-            return modified;
         }
 
-        private int[] CheckDirections(int row, int column, int rowCount, int columnCount, int[,] map)
+        private List<Direction> CheckDirections(int row, int column, int rowCount, int columnCount, int[,] map)
         {
-            int[] directions = new int[4];
+            List<Direction> directions = new List<Direction>();
+            int yPos = CheckDirection(row + 1, column, rowCount, columnCount, map);
+            int yNeg = CheckDirection(row - 1, column, rowCount, columnCount, map) * -1;
+            int xPos = CheckDirection(row, column + 1, rowCount, columnCount, map);
+            int xNeg = CheckDirection(row, column - 1, rowCount, columnCount, map) * -1;
 
-            directions[0] = CheckDirection(row + 1, column, rowCount, columnCount, map);
-            directions[1] = CheckDirection(row - 1, column, rowCount, columnCount, map) * -1;
-            directions[2] = CheckDirection(row, column + 1, rowCount, columnCount, map);
-            directions[3] = CheckDirection(row, column - 1, rowCount, columnCount, map) * -1;
+            if (yPos != 0)
+                directions.Add(new Direction(DirectionAxis.Vertical, yPos));
+            if (yNeg != 0)
+                directions.Add(new Direction(DirectionAxis.Vertical, yNeg));
+            if (xPos != 0)
+                directions.Add(new Direction(DirectionAxis.Horizontal, xPos));
+            if (xNeg != 0)
+                directions.Add(new Direction(DirectionAxis.Horizontal, xNeg));
 
             return directions;
         }
@@ -392,18 +394,20 @@ namespace TileMapSystem
         {
             if (TileMathHelper.IsOutOfRange(row, column, rowCount, columnCount))
             {
-                return 1;
+                return 0;
             }
             return map[row, column] == 0 ? 1 : 0;
         }
 
-        private void DefragmentMaps(int[][,] maps)
+        private void DefragmentMaps(int[][,] maps, AreaSpread[] areas, int[] suroundingGrids)
         {
             int distance = 5;
             for (int i = 0; i < maps.Length; i++)
             {
-                int rowCount = maps[i].GetUpperBound(0);
-                int columnCount = maps[i].GetUpperBound(1);
+                random = new Random(suroundingGrids[i] * settings.Seed);
+
+                int rowCount = maps[i].GetUpperBound(0) + 1;
+                int columnCount = maps[i].GetUpperBound(1) + 1;
 
                 for (int r = 0; r < rowCount; r++)
                 {
@@ -412,8 +416,22 @@ namespace TileMapSystem
                         int value = maps[i][r, c];
                         if (value != 0)
                         {
+                            for (int j = 0; j < areas.Length; j++)
+                            {
+                                //EdgeNoise
+                                if (areas[j].UseEdgeNoise)
+                                {
+                                    if (value == areas[j].Id)
+                                    {
+                                        List<Direction> allowedDirections = CheckDirections(r, c, rowCount, columnCount, maps[i]);
+                                        AddEdgeNoise(r, c, rowCount, columnCount, areas[j].Id, 0.3f, allowedDirections, maps[i]);
+                                    }
+                                }
+                            }
+
                             TryConnect(r, c, rowCount, columnCount, maps[i], value, distance, false);
                             TryConnect(r, c, rowCount, columnCount, maps[i], value, distance, true);
+
                         }
                     }
                 }

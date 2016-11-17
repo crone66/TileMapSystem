@@ -31,6 +31,15 @@ namespace TileMapMangerExample
             }
 
             watch.Stop();
+
+            map.Update(-1, -1);
+            map.Update(-1, -1);
+
+            for (int k = 0; k < 9; k++)
+            {
+                counter += SaveToFile(map.Maps[k].MapSurface, "map2_" + k.ToString());
+            }
+
             Console.WriteLine("Tiles generated: " + counter.ToString());
             Console.WriteLine("Generation time: " + seconds.ToString() + " seconds");
             Console.WriteLine("Write time: " + watch.Elapsed.TotalSeconds.ToString() + " seconds");
