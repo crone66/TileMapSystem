@@ -198,11 +198,11 @@ namespace TileMapSystem
         private void Resize(int currentTileRow, int currentTileColumn)
         {
             newMapAvalible = false;
-            //new Thread(()=>
-            //{
+            new Thread(()=>
+            {
                 newMap = generator.GenerateMap(currentTileColumn, currentTileRow);
                 newMapAvalible = true;    
-           //}).Start();
+            }).Start();
         }
     }
 

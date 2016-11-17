@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Text;
 using TileMapSystem;
 using System.Diagnostics;
+using System.Threading;
 
 namespace TileMapMangerExample
 {
@@ -32,8 +33,17 @@ namespace TileMapMangerExample
 
             watch.Stop();
 
+            watch.Restart();
             map.Update(-1, -1);
+            watch.Stop();
+            double update1 = watch.Elapsed.TotalSeconds;
+            Thread.Sleep(5000); //wait for generation thread (only for debugging)
+
+
+            watch.Restart();
             map.Update(-1, -1);
+            watch.Stop();
+            double update2 = watch.Elapsed.TotalSeconds;
 
             for (int k = 0; k < 9; k++)
             {
@@ -43,6 +53,8 @@ namespace TileMapMangerExample
             Console.WriteLine("Tiles generated: " + counter.ToString());
             Console.WriteLine("Generation time: " + seconds.ToString() + " seconds");
             Console.WriteLine("Write time: " + watch.Elapsed.TotalSeconds.ToString() + " seconds");
+            Console.WriteLine("Update1 time: " + update1.ToString() + " seconds");
+            Console.WriteLine("Update2 time: " + update2.ToString() + " seconds");
             Console.WriteLine("Done");
             Console.ReadKey();
         }
