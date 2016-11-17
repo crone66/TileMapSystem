@@ -6,6 +6,8 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
+
 namespace TileMapSystem
 {
     public class StreamedTileMap
@@ -24,6 +26,9 @@ namespace TileMapSystem
         private int tileColumn;
         private int currentMapId;
         private int currentMapIndex;
+        private TileMapGenerator generator;
+        private StreamedTileMap newMap;
+        private bool newMapAvalible;
 
         public List<TileMapPart> Maps
         {
@@ -65,7 +70,7 @@ namespace TileMapSystem
             }
         }
 
-        public StreamedTileMap(int spawnTileRow, int spawnTileColumn, int gridColumnCount, int gridRowCount, int tileRowCount, int tileColumnCount, int tileSize)
+        public StreamedTileMap(TileMapGenerator generator, int spawnTileRow, int spawnTileColumn, int gridColumnCount, int gridRowCount, int tileRowCount, int tileColumnCount, int tileSize)
         {
             maps = new List<TileMapPart>();
             this.gridColumnCount = gridColumnCount;
@@ -73,6 +78,7 @@ namespace TileMapSystem
             this.tileSize = tileSize;
             this.tileRowCount = tileRowCount;
             this.tileColumnCount = tileColumnCount;
+            this.generator = generator;
             tileRow = spawnTileRow;
             tileColumn = spawnTileColumn;
             gridRow = (int)Math.Floor((double)spawnTileRow / (double)tileRowCount);
@@ -103,6 +109,15 @@ namespace TileMapSystem
 
         public void Update(int currentTileRow, int currentTileColumn)
         {
+            if(newMapAvalible)
+            {
+                newMapAvalible = false;
+                this.maps = newMap.maps;
+                this.currentMapIndex = 4;
+                this.newMap = null;
+                Console.WriteLine("updated!");
+            }
+
             int newGridRow = (int)Math.Floor((double)currentTileRow / (double)tileRowCount);
             int newGridColumn = (int)Math.Floor((double)currentTileColumn / (double)tileColumnCount);
             if (TileMathHelper.IsOutOfRange(newGridRow, newGridColumn, gridRowCount, gridColumnCount))
@@ -117,10 +132,9 @@ namespace TileMapSystem
 
             if (newGridRow != gridRow || newGridColumn != gridColumn)
             {
-                Resize();
-                Shrink();
-                //load new Maps
-                //Load, Shrink and resize (threaded?)
+                gridRow = newGridRow;
+                gridColumn = newGridColumn;
+                Resize(currentTileRow, currentTileColumn);
             }
         }
 
@@ -181,14 +195,14 @@ namespace TileMapSystem
         }
 
 
-        private void Resize()
+        private void Resize(int currentTileRow, int currentTileColumn)
         {
-
-        }
-
-        private void Shrink()
-        {
-            
+            newMapAvalible = false;
+            //new Thread(()=>
+            //{
+                newMap = generator.GenerateMap(currentTileColumn, currentTileRow);
+                newMapAvalible = true;    
+           //}).Start();
         }
     }
 
