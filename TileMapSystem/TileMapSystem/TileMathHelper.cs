@@ -60,23 +60,5 @@ namespace TileMapSystem
             return gridNumX + ((gridNumY - 1) * gridColumnCount);
         }
 
-        public static int[,] MergeMaps(int[,] baseMap, int[,] overrides)
-        {
-            int rowCount = baseMap.GetUpperBound(0) + 1;
-            int columnCount = baseMap.GetUpperBound(1) + 1;
-            int[,] result = new int[rowCount, columnCount];
-            for (int r = 0; r < rowCount; r++)
-            {
-                for (int c = 0; c < columnCount; c++)
-                {
-                    if (overrides[r, c] != 0)
-                        result[r, c] = overrides[r, c];
-                    else
-                        result[r, c] = baseMap[r, c];
-                }
-            }
-            return result;
-        }
-
     }
 }
