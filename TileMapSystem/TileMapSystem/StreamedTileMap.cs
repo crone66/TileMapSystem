@@ -30,6 +30,8 @@ namespace TileMapSystem
         private StreamedTileMap newMap;
         private bool newMapAvalible;
 
+        public event EventHandler GridChanged;
+
         public List<TileMapPart> Maps
         {
             get
@@ -67,6 +69,54 @@ namespace TileMapSystem
                     screenHeight = value;
                 else
                     throw new ArgumentOutOfRangeException();
+            }
+        }
+
+        public int TileRowCount
+        {
+            get
+            {
+                return tileRowCount;
+            }
+        }
+
+        public int TileColumnCount
+        {
+            get
+            {
+                return tileColumnCount;
+            }
+        }
+
+        public int GridRow
+        {
+            get
+            {
+                return gridRow;
+            }
+        }
+
+        public int GridColumn
+        {
+            get
+            {
+                return gridColumn;
+            }
+        }
+
+        public int GridColumnCount
+        {
+            get
+            {
+                return gridColumnCount;
+            }
+        }
+
+        public int GridRowCount
+        {
+            get
+            {
+                return gridRowCount;
             }
         }
 
@@ -118,19 +168,19 @@ namespace TileMapSystem
                 Console.WriteLine("updated!");
             }
 
-            int newGridRow = (int)Math.Floor((double)currentTileRow / (double)tileRowCount);
-            int newGridColumn = (int)Math.Floor((double)currentTileColumn / (double)tileColumnCount);
-            if (TileMathHelper.IsOutOfRange(newGridRow, newGridColumn, gridRowCount, gridColumnCount))
+            int newGridRow = (int)Math.Floor((double)currentTileRow / (double)TileRowCount);
+            int newGridColumn = (int)Math.Floor((double)currentTileColumn / (double)TileColumnCount);
+            if (TileMathHelper.IsOutOfRange(newGridRow, newGridColumn, GridRowCount, GridColumnCount))
             {
-                newGridRow = TileMathHelper.ConvertToTileIndex(newGridRow, gridRowCount);
-                newGridColumn = TileMathHelper.ConvertToTileIndex(newGridColumn, gridColumnCount);
+                newGridRow = TileMathHelper.ConvertToTileIndex(newGridRow, GridRowCount);
+                newGridColumn = TileMathHelper.ConvertToTileIndex(newGridColumn, GridColumnCount);
             }
-            currentMapId = TileMathHelper.ToId(newGridRow, newGridColumn, gridColumnCount);
-            tileRow = TileMathHelper.ConvertToTileIndex(currentTileRow, tileRowCount);
-            tileColumn = TileMathHelper.ConvertToTileIndex(currentTileColumn, tileColumnCount);
+            currentMapId = TileMathHelper.ToId(newGridRow, newGridColumn, GridColumnCount);
+            tileRow = TileMathHelper.ConvertToTileIndex(currentTileRow, TileRowCount);
+            tileColumn = TileMathHelper.ConvertToTileIndex(currentTileColumn, TileColumnCount);
             currentMapIndex = maps.FindIndex(m => m.Id == currentMapId);
 
-            if (newGridRow != gridRow || newGridColumn != gridColumn)
+            if (newGridRow != GridRow || newGridColumn != GridColumn)
             {
                 gridRow = newGridRow;
                 gridColumn = newGridColumn;
@@ -138,14 +188,14 @@ namespace TileMapSystem
             }
         }
 
-        public int[,] GetTileMapInScreen(int screenWidth, int screenHeight)
+        public byte[] GetTileMapInScreen(int screenWidth, int screenHeight)
         {
             ScreenWidth = screenWidth;
             ScreenHeight = screenHeight;
 
             int screenColumnCount = (screenWidth / tileSize) + 1;
             int screenRowCount = (screenHeight / tileSize) + 1;
-            int[,] tilesInScreen = new int[screenRowCount, screenColumnCount];
+            byte[] tilesInScreen = new byte[screenRowCount * screenColumnCount];
 
             int posRow = tileRow + (screenRowCount / 2);
             int negRow = tileRow - (screenRowCount / 2);
@@ -161,15 +211,15 @@ namespace TileMapSystem
                     int newMapIndex = currentMapIndex;
                     int realRow = r;
                     int realColumn = c;
-                    if (TileMathHelper.IsOutOfRange(r, c, tileRowCount, tileColumnCount))
+                    if (TileMathHelper.IsOutOfRange(r, c, TileRowCount, TileColumnCount))
                     {
-                        newMapIndex = TileMathHelper.GetMapIndex(r, c, tileRowCount, tileColumnCount, newMapIndex);
-                        realRow = TileMathHelper.ConvertToTileIndex(r, tileRowCount);
-                        realColumn = TileMathHelper.ConvertToTileIndex(c, tileColumnCount);
+                        newMapIndex = TileMathHelper.GetMapIndex(r, c, TileRowCount, TileColumnCount, newMapIndex);
+                        realRow = TileMathHelper.ConvertToTileIndex(r, TileRowCount);
+                        realColumn = TileMathHelper.ConvertToTileIndex(c, TileColumnCount);
                     }
 
                     //GetValues and merge
-                    tilesInScreen[rowIndex, columnIndex++] = maps[newMapIndex].MapSurface[realRow, realColumn]; 
+                    tilesInScreen[(rowIndex * screenColumnCount) + columnIndex++] = maps[newMapIndex].MapSurface[(realRow * TileColumnCount) + realColumn]; 
                 }
                 rowIndex++;
             }
@@ -179,43 +229,54 @@ namespace TileMapSystem
 
         public int GetTile(int row, int column)
         {
-            int newGridRow = (int)Math.Floor((double)row / (double)tileRowCount);
-            int newGridColumn = (int)Math.Floor((double)column / (double)tileColumnCount);
-            if (TileMathHelper.IsOutOfRange(newGridRow, newGridColumn, gridRowCount, gridColumnCount))
+            int newGridRow = (int)Math.Floor((double)row / (double)TileRowCount);
+            int newGridColumn = (int)Math.Floor((double)column / (double)TileColumnCount);
+            if (TileMathHelper.IsOutOfRange(newGridRow, newGridColumn, GridRowCount, GridColumnCount))
             {
-                newGridRow = TileMathHelper.ConvertToTileIndex(newGridRow, gridRowCount);
-                newGridColumn = TileMathHelper.ConvertToTileIndex(newGridColumn, gridColumnCount);
+                newGridRow = TileMathHelper.ConvertToTileIndex(newGridRow, GridRowCount);
+                newGridColumn = TileMathHelper.ConvertToTileIndex(newGridColumn, GridColumnCount);
             }
 
-            int tileMapId = TileMathHelper.ToId(newGridRow, newGridColumn, gridColumnCount);
-            int tileRow = TileMathHelper.ConvertToTileIndex(row, tileRowCount);
-            int tileColumn = TileMathHelper.ConvertToTileIndex(column, tileColumnCount);
+            int tileMapId = TileMathHelper.ToId(newGridRow, newGridColumn, GridColumnCount);
+            int tileRow = TileMathHelper.ConvertToTileIndex(row, TileRowCount);
+            int tileColumn = TileMathHelper.ConvertToTileIndex(column, TileColumnCount);
             int currentMapIndex = maps.FindIndex(m => m.Id == tileMapId);
-            return maps[currentMapIndex].MapSurface[tileRow, tileColumn];
+            return maps[currentMapIndex].MapSurface[(tileRow * TileColumnCount) + tileColumn];
+        }
+
+        public void ChangeMap(StreamedTileMap map)
+        {
+            newMap = map;
+            newMapAvalible = true;
         }
 
 
         private void Resize(int currentTileRow, int currentTileColumn)
         {
-            newMapAvalible = false;
-            new Thread(()=>
+            if (generator != null)
             {
-                newMap = generator.GenerateMap(currentTileColumn, currentTileRow);
-                newMapAvalible = true;    
-            }).Start();
+                newMapAvalible = false;
+                new Thread(() =>
+                {
+                    newMap = generator.GenerateMap(currentTileColumn, currentTileRow);
+                    newMapAvalible = true;
+                }).Start();
+            }
+
+            GridChanged?.Invoke(this, EventArgs.Empty);
         }
     }
 
     public struct TileMapPart
     {
-        public int[,] MapSurface;
-        public int[,] PathPlacement;
-        public int[,] ObjectPlacement;
+        public byte[] MapSurface;
+        public byte[] PathPlacement;
+        public byte[] ObjectPlacement;
         public int GridColumn;
         public int GridRow;
         public int Id;
 
-        public TileMapPart(int id, int[,] mapSurface, int[,] pathPlactment, int[,] objectPlacement, int gridColumn, int gridRow)
+        public TileMapPart(int id, byte[] mapSurface, byte[] pathPlactment, byte[] objectPlacement, int gridColumn, int gridRow)
         {
             Id = id;
             MapSurface = mapSurface;
