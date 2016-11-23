@@ -193,8 +193,8 @@ namespace TileMapSystem
             ScreenWidth = screenWidth;
             ScreenHeight = screenHeight;
 
-            int screenColumnCount = (screenWidth / tileSize) + 1;
-            int screenRowCount = (screenHeight / tileSize) + 1;
+            int screenColumnCount = (screenWidth / tileSize);
+            int screenRowCount = (screenHeight / tileSize);
             byte[] tilesInScreen = new byte[screenRowCount * screenColumnCount];
 
             int posRow = tileRow + (screenRowCount / 2);
@@ -203,10 +203,10 @@ namespace TileMapSystem
             int negColumn = tileColumn - (screenColumnCount / 2);
 
             int rowIndex = 0;
-            for (int r = negRow; r < posRow + 1; r++)
+            for (int r = negRow; r < posRow; r++)
             {
                 int columnIndex = 0;
-                for (int c = negColumn; c < posColumn + 1; c++)
+                for (int c = negColumn; c < posColumn; c++)
                 {
                     int newMapIndex = currentMapIndex;
                     int realRow = r;
