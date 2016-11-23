@@ -10,44 +10,76 @@ namespace TileMapSystem
 {
     public class TileMapManager
     {
-        private List<TileMap> loadedMap;
-        private TileMap currentLevel;
+        private StreamedTileMap currentLevel;
+        private GeneratorSettings settings;
+        private AreaSpread[] spreads;
+        private TileMapGenerator generator;
+        private List<StreamedTileMap> maps;
 
-        public TileMapManager()
+        public StreamedTileMap CurrentLevel
         {
-            loadedMap = new List<TileMap>();
-        }
-
-        public TileMap Changelevel(int id)
-        {
-            int index = -1;
-            index = loadedMap.FindIndex(m => m.Id == id);
-            if(index == -1)
+            get
             {
-                currentLevel = loadedMap[index];
                 return currentLevel;
             }
-            return GenerateLevel(id);
         }
 
-        private TileMap GenerateLevel(int id)
+        public TileMapManager(GeneratorSettings settings, AreaSpread[] spreads, int x, int y)
         {
-            return null;
+            this.settings = settings;
+            this.spreads = spreads;
+            maps = new List<StreamedTileMap>();
+            generator = new TileMapGenerator();
+            currentLevel = generator.GenerateMap(settings, spreads, x, y);
         }
 
-        private void LoadTileMap(int id)
+        public void Changelevel(GeneratorSettings settings, AreaSpread[] spreads, int x, int y, bool disposeCurrentMap)
         {
-
+            this.settings = settings;
+            this.spreads = spreads;
+            if (!disposeCurrentMap && currentLevel != null)
+            {
+                maps.Add(CurrentLevel);
+            }
+            generator = new TileMapGenerator();
+            currentLevel = generator.GenerateMap(settings, spreads, x, y);
         }
-        
-        private void SaveTileMap(TileMap tileMap)
-        {
 
+        public void Changelevel(GeneratorSettings settings, int x, int y, bool disposeCurrentMap)
+        {
+            this.settings = settings;
+            if (!disposeCurrentMap && currentLevel != null)
+            {
+                maps.Add(CurrentLevel);
+            }
+            generator = new TileMapGenerator();
+            currentLevel = generator.GenerateMap(settings, spreads, x, y);
         }
 
-        private void SaveCurrentMap()
+        public void Changelevel(int x, int y, bool disposeCurrentMap)
         {
+            if (!disposeCurrentMap && currentLevel != null)
+            {
+                maps.Add(CurrentLevel);
+            }
+            currentLevel = generator.GenerateMap(x, y);
+        }
 
+        public void Changelevel(StreamedTileMap map, bool disposeCurrentMap)
+        {
+            if(!disposeCurrentMap && currentLevel != null)
+            {
+                maps.Add(currentLevel);
+            }
+            currentLevel = map;
+        }
+
+        public void Update(int currentTileRow, int currentTileColumn)
+        {
+            if (CurrentLevel != null)
+            {
+                CurrentLevel.Update(currentTileRow, currentTileColumn);
+            }
         }
     }
 }
