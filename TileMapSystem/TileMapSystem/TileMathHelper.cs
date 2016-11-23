@@ -30,12 +30,6 @@ namespace TileMapSystem
             return (row * columnCount) + column + 1;
         }
 
-        public static void ToLocation(int id, out int row, out int column, int columnCount)
-        {
-            column = (int)Math.Floor((double)id / (double)columnCount);
-            row = id % columnCount;
-        }
-
         public static int GetMapIndex(int row, int column, int rowCount, int columnCount, int mapIndex)
         {
             int translationY = row < 0 ? (int)Math.Floor((double)row / (double)rowCount) : (row >= rowCount ? (int)Math.Floor((double)row / (double)rowCount) : 0);
@@ -60,23 +54,18 @@ namespace TileMapSystem
             return gridNumX + ((gridNumY - 1) * gridColumnCount);
         }
 
-        public static int[,] MergeMaps(int[,] baseMap, int[,] overrides)
+        public static byte[] MergeMaps(byte[] baseMap, byte[] overrides)
         {
-            int rowCount = baseMap.GetUpperBound(0) + 1;
-            int columnCount = baseMap.GetUpperBound(1) + 1;
-            int[,] result = new int[rowCount, columnCount];
-            for (int r = 0; r < rowCount; r++)
+            byte[] result = new byte[baseMap.Length];
+            for (int r = 0; r < result.Length; r++)
             {
-                for (int c = 0; c < columnCount; c++)
-                {
-                    if (overrides[r, c] != 0)
-                        result[r, c] = overrides[r, c];
-                    else
-                        result[r, c] = baseMap[r, c];
-                }
-            }
+                if (overrides[r] != 0)
+                    result[r] = overrides[r];
+                else
+                    result[r] = baseMap[r];
+            }    
+            
             return result;
         }
-
     }
 }
