@@ -43,8 +43,9 @@
     <Compile Include="AreaSpread.cs" />
     <Compile Include="Direction.cs" />
     <Compile Include="GeneratorSettings.cs" />
-    <Compile Include="StreamedTileMap.cs" />
+    <Compile Include="GridEventArgs.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="StreamedTileMap.cs" />
     <Compile Include="TileMapGenerator.cs" />
     <Compile Include="TileMapManager.cs" />
     <Compile Include="TileMathHelper.cs" />

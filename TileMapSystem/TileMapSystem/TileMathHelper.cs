@@ -27,7 +27,7 @@ namespace TileMapSystem
 
         public static int ToId(int row, int column, int columnCount)
         {
-            return (row * columnCount) + column + 1;
+            return (row * columnCount) + column;
         }
 
         public static int GetMapIndex(int row, int column, int rowCount, int columnCount, int mapIndex)
@@ -49,9 +49,9 @@ namespace TileMapSystem
 
         public static int CalculateGridTranslation(int translationX, int translationY, int sourceX, int sourceY, int gridRowCount, int gridColumnCount)
         {
-            int gridNumX = ConvertToTileIndex((sourceX - 1) + translationX, gridColumnCount) + 1;
-            int gridNumY = ConvertToTileIndex((sourceY - 1) + translationY, gridRowCount) + 1;
-            return gridNumX + ((gridNumY - 1) * gridColumnCount);
+            int gridNumX = ConvertToTileIndex(sourceX + translationX, gridColumnCount);
+            int gridNumY = ConvertToTileIndex(sourceY + translationY, gridRowCount);
+            return ToId(gridNumY, gridNumX, gridColumnCount);
         }
 
         public static byte[] MergeMaps(byte[] baseMap, byte[] overrides)

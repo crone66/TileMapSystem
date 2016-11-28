@@ -60,7 +60,7 @@ namespace TileMapSystem
             return map;
         }
 
-        public StreamedTileMap GenerateMap(GeneratorSettings settings, AreaSpread[] areas, int startLocationX, int startLocationY)
+        public StreamedTileMap GenerateMap(GeneratorSettings settings, AreaSpread[] areas, int tileColumn, int tileRow)
         {
             if (settings.Seed > 0)
                 random = new Random(settings.Seed);
@@ -75,8 +75,8 @@ namespace TileMapSystem
             int size = tilesPerColumn * tilesPerColumn;
             int gridsPerRow = (int)Math.Ceiling(GetMapSize(settings) / tilesPerGrid);
 
-            int gridLocationX = (int)Math.Ceiling(startLocationX / tilesPerGrid);
-            int gridLocationY = (int)Math.Ceiling(startLocationY / tilesPerGrid);
+            int gridColumn = (int)Math.Floor(tileColumn / tilesPerGrid);
+            int gridRow = (int)Math.Floor(tileRow / tilesPerGrid);
 
             byte[][] edgeOverrides = new byte[9][];
             byte[][] maps = new byte[9][];
@@ -86,9 +86,9 @@ namespace TileMapSystem
                 maps[i] = new byte[size];
             }
 
-            int[] suroundingGrids = CreateSuroundings(maps.Length, gridLocationX, gridLocationY, gridsPerRow);
+            int[] suroundingGrids = CreateSuroundings(maps.Length, gridColumn, gridRow, gridsPerRow);
 
-            StreamedTileMap streamedTileMap = new StreamedTileMap(this, startLocationY, startLocationX, gridsPerRow, gridsPerRow, tilesPerColumn, tilesPerColumn, settings.TileSize);
+            StreamedTileMap streamedTileMap = new StreamedTileMap(this, tileRow, tileColumn, gridsPerRow, gridsPerRow, tilesPerColumn, tilesPerColumn, settings.TileSize);
             //Create Map
             foreach(LayerType currentLayerType in Enum.GetValues(typeof(LayerType)).Cast<LayerType>().OrderBy(k => (int)k))
             {
@@ -145,21 +145,21 @@ namespace TileMapSystem
             return GenerateMap(settings, spreads, tileLocationX, tileLocationY);
         }
 
-        private int[] CreateSuroundings(int gridCount, int gridLocationX, int gridLocationY, int gridsPerRow)
+        private int[] CreateSuroundings(int gridCount, int gridColumn, int gridRow, int gridsPerRow)
         {
             int[] suroundingGrids = new int[gridCount];
             //Line 1
-            suroundingGrids[0] = TileMathHelper.CalculateGridTranslation(-1, -1, gridLocationX, gridLocationY, gridsPerRow, gridsPerRow);
-            suroundingGrids[1] = TileMathHelper.CalculateGridTranslation(0, -1, gridLocationX, gridLocationY, gridsPerRow, gridsPerRow);
-            suroundingGrids[2] = TileMathHelper.CalculateGridTranslation(1, -1, gridLocationX, gridLocationY, gridsPerRow, gridsPerRow);
+            suroundingGrids[0] = TileMathHelper.CalculateGridTranslation(-1, -1, gridColumn, gridRow, gridsPerRow, gridsPerRow);
+            suroundingGrids[1] = TileMathHelper.CalculateGridTranslation(0, -1, gridColumn, gridRow, gridsPerRow, gridsPerRow);
+            suroundingGrids[2] = TileMathHelper.CalculateGridTranslation(1, -1, gridColumn, gridRow, gridsPerRow, gridsPerRow);
             //Line 2
-            suroundingGrids[3] = TileMathHelper.CalculateGridTranslation(-1, 0, gridLocationX, gridLocationY, gridsPerRow, gridsPerRow);
-            suroundingGrids[4] = TileMathHelper.CalculateGridTranslation(0, 0, gridLocationX, gridLocationY, gridsPerRow, gridsPerRow); //Center
-            suroundingGrids[5] = TileMathHelper.CalculateGridTranslation(1, 0, gridLocationX, gridLocationY, gridsPerRow, gridsPerRow);
+            suroundingGrids[3] = TileMathHelper.CalculateGridTranslation(-1, 0, gridColumn, gridRow, gridsPerRow, gridsPerRow);
+            suroundingGrids[4] = TileMathHelper.CalculateGridTranslation(0, 0, gridColumn, gridRow, gridsPerRow, gridsPerRow); //Center
+            suroundingGrids[5] = TileMathHelper.CalculateGridTranslation(1, 0, gridColumn, gridRow, gridsPerRow, gridsPerRow);
             //Line 3
-            suroundingGrids[6] = TileMathHelper.CalculateGridTranslation(1, 1, gridLocationX, gridLocationY, gridsPerRow, gridsPerRow);
-            suroundingGrids[7] = TileMathHelper.CalculateGridTranslation(0, 1, gridLocationX, gridLocationY, gridsPerRow, gridsPerRow);
-            suroundingGrids[8] = TileMathHelper.CalculateGridTranslation(-1, 1, gridLocationX, gridLocationY, gridsPerRow, gridsPerRow);
+            suroundingGrids[6] = TileMathHelper.CalculateGridTranslation(-1, 1, gridColumn, gridRow, gridsPerRow, gridsPerRow);
+            suroundingGrids[7] = TileMathHelper.CalculateGridTranslation(0, 1, gridColumn, gridRow, gridsPerRow, gridsPerRow);
+            suroundingGrids[8] = TileMathHelper.CalculateGridTranslation(1, 1, gridColumn, gridRow, gridsPerRow, gridsPerRow);
 
             return suroundingGrids;
         }
@@ -171,7 +171,7 @@ namespace TileMapSystem
             {
                 int gridId = suroundingGrids[i];
                 int gridRow = (int)Math.Floor((double)gridId / (double)gridsPerRow);
-                int gridColumn = (gridId % gridsPerRow) - 1;
+                int gridColumn = (gridId % gridsPerRow);
 
                 gridRow = TileMathHelper.ConvertToTileIndex(gridRow, gridsPerRow);
                 gridColumn = TileMathHelper.ConvertToTileIndex(gridColumn, gridsPerRow);
@@ -216,7 +216,7 @@ namespace TileMapSystem
             {
                 int row = random.Next(0, rowCount);
                 int column = random.Next(0, columnCount);
-                int fieldIndex = (row * columnCount) + column;
+                int fieldIndex = TileMathHelper.ToId(row, column, columnCount);
                 int minRadius = random.Next(area.MinSizeInMeter, area.MaxSizeInMeter + 1);
 
                 if (maps[mapIndex][fieldIndex] == 0 || maps[mapIndex][fieldIndex] == area.Flag)
@@ -235,7 +235,7 @@ namespace TileMapSystem
             {
                 int row = random.Next(0, rowCount);
                 int column = random.Next(0, columnCount);
-                int fieldIndex = (row * columnCount) + column;
+                int fieldIndex = TileMathHelper.ToId(row, column, columnCount);
                 int minRadius = random.Next(area.MinSizeInMeter, area.MaxSizeInMeter + 1);
 
                 if(map[fieldIndex] == 0 || map[fieldIndex] == area.Flag)
@@ -278,9 +278,10 @@ namespace TileMapSystem
                     int distance = TileMathHelper.GetDistance(x, y, c * tileSize, r * tileSize);
                     if (distance <= minRadiusPx)
                     {
-                        if (map[(realRow * columnCount) + realColumn] == 0)
+                        int id = TileMathHelper.ToId(realRow, realColumn, columnCount);
+                        if (map[id] == 0)
                         {
-                            map[(realRow * columnCount) + realColumn] = flag;
+                            map[id] = flag;
                             modified++;
                         }
                     }
@@ -330,19 +331,20 @@ namespace TileMapSystem
                     int distance = TileMathHelper.GetDistance(x, y, c * tileSize, r * tileSize);
                     if (distance <= minRadiusPx)
                     {
+                        int id = TileMathHelper.ToId(realRow, realColumn, columnCount);
                         if (mapIndex == currentMapIndex)
                         {
-                            if(maps[currentMapIndex][(realRow * columnCount) + realColumn] == 0)
+                            if(maps[currentMapIndex][id] == 0)
                             {
-                                maps[currentMapIndex][(realRow * columnCount) + realColumn] = flag;
+                                maps[currentMapIndex][id] = flag;
                                 modified++;
                             }
                         }
                         else
                         {
-                            if (edgeOverrides[currentMapIndex][(realRow * columnCount) + realColumn] == 0)
+                            if (edgeOverrides[currentMapIndex][id] == 0)
                             {
-                                edgeOverrides[currentMapIndex][(realRow * columnCount) + realColumn] = flag;
+                                edgeOverrides[currentMapIndex][id] = flag;
                             }
                         }
                     }
@@ -374,10 +376,10 @@ namespace TileMapSystem
                         return;
 
                     allowedDirection = CheckDirections(row, column, rowCount, columnCount, map);
-
-                    if (map[(row * columnCount) + column] == 0)
+                    int id = TileMathHelper.ToId(row, column, columnCount);
+                    if (map[id] == 0)
                     {
-                        map[(row * columnCount) + column] = flag;
+                        map[id] = flag;
                     }
 
                     percentage -= 0.01f;
@@ -412,7 +414,7 @@ namespace TileMapSystem
             {
                 return 0;
             }
-            return map[(row * columnCount) + column] == 0 ? 1 : 0;
+            return map[TileMathHelper.ToId(row, column, columnCount)] == 0 ? 1 : 0;
         }
 
         private void DefragmentMaps(byte[][] maps, AreaSpread[] areas, int[] suroundingGrids, int rowCount, int columnCount)
@@ -425,7 +427,7 @@ namespace TileMapSystem
                 {
                     for (int c = 0; c < columnCount; c++)
                     {
-                        byte flag = maps[i][(r * columnCount) + c];
+                        byte flag = maps[i][TileMathHelper.ToId(r, c, columnCount)];
                         if (flag != 0)
                         {
                             for (int j = 0; j < areas.Length; j++)
@@ -468,18 +470,19 @@ namespace TileMapSystem
 
                 if (!TileMathHelper.IsOutOfRange(realRow, realColumn, rowCount, columnCount))
                 {
+                    int id = TileMathHelper.ToId(realRow, realColumn, columnCount);
                     if (!connectPos)
                     {
-                        if (map[(realRow * columnCount) + realColumn] == flag)
+                        if (map[id] == flag)
                         {
                             connectPos = true;
                         }
                     }
                     else
                     {
-                        if (map[(realRow * columnCount) + realColumn] == 0)
+                        if (map[id] == 0)
                         {
-                            map[(realRow * columnCount) + realColumn] = flag;
+                            map[id] = flag;
                         }
                     }
                 }
@@ -490,18 +493,19 @@ namespace TileMapSystem
                     realRow = row - i;
                 if (!TileMathHelper.IsOutOfRange(realRow, realColumn, rowCount, columnCount))
                 {
+                    int id = TileMathHelper.ToId(realRow, realColumn, columnCount);
                     if (!connectNeg)
                     {
-                        if (map[(realRow * columnCount) + realColumn] == flag)
+                        if (map[id] == flag)
                         {
                             connectNeg = true;
                         }
                     }
                     else
                     {
-                        if (map[(realRow * columnCount) + realColumn] == 0)
+                        if (map[id] == 0)
                         {
-                            map[(realRow * columnCount) + realColumn] = flag;
+                            map[id] = flag;
                         }
                     }
                 }
