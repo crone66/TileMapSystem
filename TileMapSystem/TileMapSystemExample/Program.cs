@@ -4,6 +4,7 @@ using System.Text;
 using TileMapSystem;
 using System.Diagnostics;
 using System.Threading;
+using System.IO;
 
 namespace TileMapMangerExample
 {
@@ -15,24 +16,25 @@ namespace TileMapMangerExample
             double sum2 = 0;
             double sum3 = 0;
             long inUse = 0;
-            int iterations = 10;
-            int updateIterations = 10;
-            TileMapManager tileMapManager;// = new TileMapManager(new GeneratorSettings(1, 50, 1.5f, 1000000, 10000000, true, 1000f),
-            //        new AreaSpread[2] { new AreaSpread(1, 0.30f, 0, 20, 250, true, SpreadOption.Circle, LayerType.Height), new AreaSpread(2, 0.125f, 0, 20, 200, true, SpreadOption.Circle, LayerType.Height) }, 1, 1);
+            int iterations = 1;
+            int updateIterations = 1;
+            int startX = -627;
+            int startY = -1;
+            int endX = -627;
+            int endY = 1;
+            TileMapManager tileMapManager;
+
             for (int b = 0; b < iterations; b++)
             {
                 Stopwatch watch = new Stopwatch();
                 watch.Start();
-                //TileMapGenerator generator = new TileMapGenerator();
-                //StreamedTileMap map = generator.GenerateMap(new GeneratorSettings(1, 50, 1.5f, 1000000, 10000000, true, 1000f),
-                //    new AreaSpread[2] { new AreaSpread(1, 0.30f, 0, 20, 250, true, SpreadOption.Circle, LayerType.Height), new AreaSpread(2, 0.125f, 0, 20, 200, true, SpreadOption.Circle, LayerType.Height) }, 1, 1);
                 tileMapManager = new TileMapManager(new GeneratorSettings(1, 50, 1.5f, 1000000, 10000000, true, 1000f),
-                    new AreaSpread[2] { new AreaSpread(1, 0.30f, 0, 20, 250, true, true, 5, SpreadOption.Circle, LayerType.Height), new AreaSpread(2, 0.125f, 0, 20, 200, true, true, 5, SpreadOption.Circle, LayerType.Height) }, 1, 1);
+                    new AreaSpread[2] { new AreaSpread(1, 0.30f, 0, 20, 250, true, true, 5, SpreadOption.Circle, LayerType.Height), new AreaSpread(2, 0.125f, 0, 20, 200, true, true, 5, SpreadOption.Circle, LayerType.Height) }, startX, startY);
                 StreamedTileMap map = tileMapManager.CurrentLevel;
                 watch.Stop();
                 double seconds = watch.Elapsed.TotalSeconds;
 
-                tileMapManager.Update(1, 1);
+                tileMapManager.Update(startY, startX);
                 byte[] screenMap = map.GetTileMapInScreen(800, 600);
                 SaveToFile(screenMap, "screenMap"+b.ToString(), 800 / 50);
 
@@ -47,14 +49,14 @@ namespace TileMapMangerExample
                 watch.Stop();
 
                 watch.Restart();
-                tileMapManager.Update(-1, -1);
+                tileMapManager.Update(endY, endX);
                 watch.Stop();
                 double update1 = watch.Elapsed.TotalSeconds;
                 Thread.Sleep(5000); //wait for generation thread (only for debugging)
 
 
                 watch.Restart();
-                tileMapManager.Update(-1, -1);
+                tileMapManager.Update(endY, endX);
                 watch.Stop();
                 double update2 = watch.Elapsed.TotalSeconds;
 
@@ -69,10 +71,13 @@ namespace TileMapMangerExample
                 Log("Update1 time: " + update1.ToString() + " seconds");
                 Log("Update2 time: " + update2.ToString() + " seconds");
 
+                screenMap = map.GetTileMapInScreen(800, 600);
+                SaveToFile(screenMap, "screenMap2_" + b.ToString(), 800 / 50);
+
                 for (int i = 0; i < updateIterations; i++)
                 {
                     watch.Restart();
-                    tileMapManager.Update(-1 - i, -1 - i);
+                    tileMapManager.Update(endY - i, endX - i);
                     byte[] data = map.GetTileMapInScreen(800, 600);
                     watch.Stop();
                     update2 = watch.Elapsed.TotalMilliseconds;
@@ -83,14 +88,14 @@ namespace TileMapMangerExample
                 }
 
                 watch.Restart();
-                tileMapManager.Update(1, 1);
+                tileMapManager.Update(startY, startX);
                 watch.Stop();
                 update2 = watch.Elapsed.TotalMilliseconds;
                 sum2 += update2;
                 Log("Update time: " + update2.ToString() + " ms");
                 Thread.Sleep(2000);
                 watch.Restart();
-                tileMapManager.Update(1, 1);
+                tileMapManager.Update(startY, startX);
                 watch.Stop();
                 update2 = watch.Elapsed.TotalMilliseconds;
                 sum3 += update2;
@@ -106,7 +111,35 @@ namespace TileMapMangerExample
             Log("Avg Update Time (GridChange):" + (sum3 / iterations).ToString() + " ms");
             Log("Avg MemoryInUse: " +(inUse / (iterations * updateIterations)).ToString() + " byte");
             Log("Final MemoryInUse: " + Process.GetCurrentProcess().PrivateMemorySize64.ToString() + " byte");
+
+            MatchFiles();
             Console.ReadKey();
+        }
+
+        private static void MatchFiles()
+        {
+            string[] files = Directory.GetFiles(@"C:\Users\marce\Source\Repos\TileMapSystem\TileMapSystem\TileMapSystemExample\bin\Debug", "map*");
+            string[] maps = new string[files.Length];
+            for (int i = 0; i < files.Length; i++)
+            {
+                maps[i] = File.ReadAllText(files[i]);
+            }
+
+            for (int i = 0; i < maps.Length; i++)
+            {
+                int matchCount = 0;
+                for (int j = i + 1; j < maps.Length; j++)
+                {
+                    int mapLength = maps[i].Length;
+                    matchCount = 0;
+                    for (int l = 0; l < mapLength; l++)
+                    {
+                        if (maps[i][l] == maps[j][l])
+                            matchCount++;
+                    }
+                    Console.WriteLine((i+6==j ? "(Match)" : "")+  "Map " + i.ToString() + " To " + j.ToString() + ": " + (((double)matchCount / (double)mapLength) * 100).ToString());
+                }
+            }
         }
 
         private static int SaveToFile(byte[] map, string fileName, int columnCount)
