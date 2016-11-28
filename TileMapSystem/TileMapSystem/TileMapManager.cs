@@ -4,6 +4,7 @@
  * Date: 12.11.2016
  */
 
+using System;
 using System.Collections.Generic;
 
 namespace TileMapSystem
@@ -16,6 +17,10 @@ namespace TileMapSystem
         private TileMapGenerator generator;
         private List<StreamedTileMap> maps;
 
+        public event EventHandler<GridEventArgs> GridChangeRequested;
+        public event EventHandler<GridEventArgs> GridChanged;
+        public event EventHandler<GridEventArgs> GridGenerationIsSlow;
+
         public StreamedTileMap CurrentLevel
         {
             get
@@ -24,13 +29,12 @@ namespace TileMapSystem
             }
         }
 
-        public TileMapManager(GeneratorSettings settings, AreaSpread[] spreads, int x, int y)
+        public TileMapManager(GeneratorSettings settings, AreaSpread[] spreads)
         {
             this.settings = settings;
             this.spreads = spreads;
             maps = new List<StreamedTileMap>();
             generator = new TileMapGenerator();
-            currentLevel = generator.GenerateMap(settings, spreads, x, y);
         }
 
         public void Changelevel(GeneratorSettings settings, AreaSpread[] spreads, int x, int y, bool disposeCurrentMap)
@@ -42,7 +46,9 @@ namespace TileMapSystem
                 maps.Add(CurrentLevel);
             }
             generator = new TileMapGenerator();
+            UnSub();
             currentLevel = generator.GenerateMap(settings, spreads, x, y);
+            Sub();
         }
 
         public void Changelevel(GeneratorSettings settings, int x, int y, bool disposeCurrentMap)
@@ -53,7 +59,9 @@ namespace TileMapSystem
                 maps.Add(CurrentLevel);
             }
             generator = new TileMapGenerator();
+            UnSub();
             currentLevel = generator.GenerateMap(settings, spreads, x, y);
+            Sub();
         }
 
         public void Changelevel(int x, int y, bool disposeCurrentMap)
@@ -62,7 +70,27 @@ namespace TileMapSystem
             {
                 maps.Add(CurrentLevel);
             }
+
+            UnSub();
             currentLevel = generator.GenerateMap(x, y);
+            Sub();
+        }
+
+        private void Sub()
+        {
+            currentLevel.GridChanged += GridChanged;
+            currentLevel.GridChangeRequested += GridChangeRequested;
+            currentLevel.GridGenerationIsSlow += GridGenerationIsSlow;
+        }
+
+        private void UnSub()
+        {
+            if (currentLevel != null)
+            {
+                currentLevel.GridChanged -= GridChanged;
+                currentLevel.GridChangeRequested -= GridChangeRequested;
+                currentLevel.GridGenerationIsSlow -= GridGenerationIsSlow;
+            }
         }
 
         public void Changelevel(StreamedTileMap map, bool disposeCurrentMap)
