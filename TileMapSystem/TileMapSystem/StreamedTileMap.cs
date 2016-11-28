@@ -29,8 +29,11 @@ namespace TileMapSystem
         private TileMapGenerator generator;
         private StreamedTileMap newMap;
         private bool newMapAvalible;
+        private bool newMapRequested;
 
-        public event EventHandler GridChanged;
+        public event EventHandler<GridEventArgs> GridChangeRequested;
+        public event EventHandler<GridEventArgs> GridChanged;
+        public event EventHandler<GridEventArgs> GridGenerationIsSlow;
 
         public List<TileMapPart> Maps
         {
@@ -133,6 +136,9 @@ namespace TileMapSystem
             tileColumn = spawnTileColumn;
             gridRow = (int)Math.Floor((double)spawnTileRow / (double)tileRowCount);
             gridColumn = (int)Math.Floor((double)spawnTileColumn / (double)tileColumnCount);
+
+            gridRow = TileMathHelper.ConvertToTileIndex(gridRow, gridRowCount);
+            gridColumn = TileMathHelper.ConvertToTileIndex(gridColumn, gridColumnCount);
         }
 
         public StreamedTileMap(int spawnTileRow, int spawnTileColumn, int gridColumnCount, int gridRowCount, int tileRowCount, int tileColumnCount, int tileSize, List<TileMapPart> maps)
@@ -147,8 +153,8 @@ namespace TileMapSystem
             tileColumn = spawnTileColumn;
             gridRow = (int)Math.Floor((double)spawnTileRow / (double)tileRowCount);
             gridColumn = (int)Math.Floor((double)spawnTileColumn / (double)tileColumnCount);
-
-            Update(tileRow, tileColumn);
+            gridRow = TileMathHelper.ConvertToTileIndex(gridRow, gridRowCount);
+            gridColumn = TileMathHelper.ConvertToTileIndex(gridColumn, gridColumnCount);
         }
 
         public void Add(TileMapPart mapPart)
@@ -159,15 +165,6 @@ namespace TileMapSystem
 
         public void Update(int currentTileRow, int currentTileColumn)
         {
-            if(newMapAvalible)
-            {
-                newMapAvalible = false;
-                this.maps = newMap.maps;
-                this.currentMapIndex = 4;
-                this.newMap = null;
-                Console.WriteLine("updated!");
-            }
-
             int newGridRow = (int)Math.Floor((double)currentTileRow / (double)TileRowCount);
             int newGridColumn = (int)Math.Floor((double)currentTileColumn / (double)TileColumnCount);
             if (TileMathHelper.IsOutOfRange(newGridRow, newGridColumn, GridRowCount, GridColumnCount))
@@ -178,10 +175,14 @@ namespace TileMapSystem
             currentMapId = TileMathHelper.ToId(newGridRow, newGridColumn, GridColumnCount);
             tileRow = TileMathHelper.ConvertToTileIndex(currentTileRow, TileRowCount);
             tileColumn = TileMathHelper.ConvertToTileIndex(currentTileColumn, TileColumnCount);
+
+            TryMapUpdate(newGridRow, newGridColumn);
+
             currentMapIndex = maps.FindIndex(m => m.Id == currentMapId);
 
-            if (newGridRow != GridRow || newGridColumn != GridColumn)
+            if ((newGridRow != GridRow || newGridColumn != GridColumn) && !newMapRequested)
             {
+                GridChangeRequested?.Invoke(this, new GridEventArgs(GridRow, GridColumn, maps[4].GridRow, maps[4].GridColumn, false));
                 gridRow = newGridRow;
                 gridColumn = newGridColumn;
                 Resize(currentTileRow, currentTileColumn);
@@ -219,7 +220,15 @@ namespace TileMapSystem
                     }
 
                     //GetValues and merge
-                    tilesInScreen[(rowIndex * screenColumnCount) + columnIndex++] = maps[newMapIndex].MapSurface[(realRow * TileColumnCount) + realColumn]; 
+                    if (newMapIndex < 0)
+                    {
+                        tilesInScreen[TileMathHelper.ToId(rowIndex, columnIndex++, screenColumnCount)] = 255;
+                        int newGridRow = (int)Math.Floor((double)r / (double)TileRowCount);
+                        int newGridColumn = (int)Math.Floor((double)c / (double)TileColumnCount);
+                        GridGenerationIsSlow?.Invoke(this, new GridEventArgs(newGridRow, newGridColumn, GridRow, GridColumn, false));
+                    }
+                    else
+                        tilesInScreen[TileMathHelper.ToId(rowIndex, columnIndex++, screenColumnCount)] = maps[newMapIndex].MapSurface[TileMathHelper.ToId(realRow, realColumn, TileColumnCount)]; 
                 }
                 rowIndex++;
             }
@@ -241,7 +250,7 @@ namespace TileMapSystem
             int tileRow = TileMathHelper.ConvertToTileIndex(row, TileRowCount);
             int tileColumn = TileMathHelper.ConvertToTileIndex(column, TileColumnCount);
             int currentMapIndex = maps.FindIndex(m => m.Id == tileMapId);
-            return maps[currentMapIndex].MapSurface[(tileRow * TileColumnCount) + tileColumn];
+            return maps[currentMapIndex].MapSurface[TileMathHelper.ToId(tileRow, tileColumn, TileColumnCount)];
         }
 
         public void ChangeMap(StreamedTileMap map)
@@ -250,20 +259,45 @@ namespace TileMapSystem
             newMapAvalible = true;
         }
 
-
         private void Resize(int currentTileRow, int currentTileColumn)
         {
             if (generator != null)
             {
+                if (newMap != null)
+                {
+                    newMapAvalible = true;
+                    if (TryMapUpdate(gridRow, gridColumn))
+                        return;
+                }
+
                 newMapAvalible = false;
+                newMapRequested = true;
                 new Thread(() =>
                 {
                     newMap = generator.GenerateMap(currentTileColumn, currentTileRow);
                     newMapAvalible = true;
                 }).Start();
             }
+        }
 
-            GridChanged?.Invoke(this, EventArgs.Empty);
+        private bool TryMapUpdate(int currentGridRow, int currentGridColumn)
+        {
+            if (newMapAvalible)
+            {
+                if ((currentGridRow == newMap.maps[4].GridRow && currentGridColumn == newMap.maps[4].GridColumn) || newMapRequested)
+                {
+                    List<TileMapPart> oldMap = maps;
+                    maps = newMap.maps;
+                    newMap.maps = oldMap;
+                    currentMapIndex = 4;
+                    newMapAvalible = false;
+                    newMapRequested = false;
+                    GridChanged?.Invoke(this, new GridEventArgs(GridRow, GridColumn, newMap.maps[4].GridRow, newMap.maps[4].GridColumn, !newMapRequested));
+                    return true;
+                }
+                newMapAvalible = false;
+            }
+            return false;
         }
     }
 
