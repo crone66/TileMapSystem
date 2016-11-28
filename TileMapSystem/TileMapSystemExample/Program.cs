@@ -28,8 +28,11 @@ namespace TileMapMangerExample
             {
                 Stopwatch watch = new Stopwatch();
                 watch.Start();
-                tileMapManager = new TileMapManager(new GeneratorSettings(1, 50, 1.5f, 1000000, 10000000, true, 1000f),
-                    new AreaSpread[2] { new AreaSpread(1, 0.30f, 0, 20, 250, true, true, 5, SpreadOption.Circle, LayerType.Height), new AreaSpread(2, 0.125f, 0, 20, 200, true, true, 5, SpreadOption.Circle, LayerType.Height) }, startX, startY);
+                GeneratorSettings settings = new GeneratorSettings(1, 50, 1.5f, 1000000, 10000000, true, 1000f);
+                AreaSpread[] spreads = new AreaSpread[2] { new AreaSpread(1, 0.30f, 0, 20, 250, true, true, 5, SpreadOption.Circle, LayerType.Height), new AreaSpread(2, 0.125f, 0, 20, 200, true, true, 5, SpreadOption.Circle, LayerType.Height) };
+
+                tileMapManager = new TileMapManager(settings, spreads);
+                tileMapManager.Changelevel(settings, startX, startY, false);
                 StreamedTileMap map = tileMapManager.CurrentLevel;
                 watch.Stop();
                 double seconds = watch.Elapsed.TotalSeconds;
