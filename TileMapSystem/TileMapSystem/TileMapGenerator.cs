@@ -9,6 +9,9 @@ using System.Linq;
 
 namespace TileMapSystem
 {
+    /// <summary>
+    /// The tile map generator can be used to generate random tile maps
+    /// </summary>
     public class TileMapGenerator
     {
         private Random random;
@@ -16,17 +19,31 @@ namespace TileMapSystem
         private GeneratorSettings settings;
         private AreaSpread[] spreads;
 
+        /// <summary>
+        /// Initzializes tile map generator
+        /// </summary>
         public TileMapGenerator()
         {
-
+            random = null;
+            seed = -1;
         }
 
+        /// <summary>
+        /// Initzializes tile map generator with a given seed
+        /// </summary>
+        /// <param name="seed">Seed for the random generator</param>
         public TileMapGenerator(int seed)
         {
             this.seed = seed;
             random = new Random(seed);
         }
 
+        /// <summary>
+        /// Generates a map based on the generator settings and area spreads
+        /// </summary>
+        /// <param name="settings">Generator settings to modify the generation process</param>
+        /// <param name="area">Area that should be placed on the map</param>
+        /// <returns>Returns the maps as a flatten byte array</returns>
         public byte[] GenerateMap(GeneratorSettings settings, AreaSpread area)
         {
             if (settings.Seed >= 0)
@@ -43,6 +60,12 @@ namespace TileMapSystem
             return map;
         }
 
+        /// <summary>
+        /// Generates a map based on the generator settings and area spreads
+        /// </summary>
+        /// <param name="settings">Generator settings to modify the generation process</param>
+        /// <param name="areas">Areas that should be placed on the map</param>
+        /// <returns>Returns the maps as a flatten byte array</returns>
         public byte[] GenerateMap(GeneratorSettings settings, AreaSpread[] areas)
         {
             if (settings.Seed >= 0)
@@ -60,6 +83,14 @@ namespace TileMapSystem
             return map;
         }
 
+        /// <summary>
+        /// Generates a map based on the given tile location, generator settings and area spreads
+        /// </summary>
+        /// <param name="settings">Generator settings to modify the generation process</param>
+        /// <param name="areas">Areas that should be placed on the map</param>
+        /// <param name="tileColumn">Tile column index</param>
+        /// <param name="tileRow">Tile row index</param>
+        /// <returns>Returns a StreamedTileMap</returns>
         public StreamedTileMap GenerateMap(GeneratorSettings settings, AreaSpread[] areas, int tileColumn, int tileRow)
         {
             if (settings.Seed > 0)
@@ -140,11 +171,25 @@ namespace TileMapSystem
             return streamedTileMap;
         }
 
-        public StreamedTileMap GenerateMap(int tileLocationX, int tileLocationY)
+        /// <summary>
+        /// Generates a map based on the current tile location
+        /// </summary>
+        /// <param name="tileColumn">Tile column index</param>
+        /// <param name="tileRow">Tile row index</param>
+        /// <returns>Returns a StreamedTileMap</returns>
+        public StreamedTileMap GenerateMap(int tileColumn, int tileRow)
         {
-            return GenerateMap(settings, spreads, tileLocationX, tileLocationY);
+            return GenerateMap(settings, spreads, tileColumn, tileRow);
         }
 
+        /// <summary>
+        /// Calculate all surrounding grid id's
+        /// </summary>
+        /// <param name="gridCount">Number of grids</param>
+        /// <param name="gridColumn">Grid column index</param>
+        /// <param name="gridRow">Grid row index</param>
+        /// <param name="gridsPerRow">Number of grids per row</param>
+        /// <returns>Returns grid id's of all surrounding grids</returns>
         private int[] CreateSuroundings(int gridCount, int gridColumn, int gridRow, int gridsPerRow)
         {
             int[] suroundingGrids = new int[gridCount];
@@ -164,6 +209,13 @@ namespace TileMapSystem
             return suroundingGrids;
         }
 
+        /// <summary>
+        /// Create the StreamedTileMap from the generated grids
+        /// </summary>
+        /// <param name="maps">Current grid with all it's surrounding grids</param>
+        /// <param name="suroundingGrids">Ids of all surrounding grids</param>
+        /// <param name="gridsPerRow">Number grids per row</param>
+        /// <param name="streamedTileMap">A reference to a streamedTileMap</param>
         private void CreateTileMapParts(byte[][] maps, int[] suroundingGrids, int gridsPerRow, StreamedTileMap streamedTileMap)
         {
             //create TileMapPart
@@ -182,6 +234,11 @@ namespace TileMapSystem
 
         }
 
+        /// <summary>
+        /// Generates an empty map based on the generator settings
+        /// </summary>
+        /// <param name="settings">Settings which descibes the map</param>
+        /// <returns>Returns an empty map</returns>
         private byte[] PopulateMap(GeneratorSettings settings)
         {
             if (settings.RadiusOfCylinder)
@@ -200,6 +257,11 @@ namespace TileMapSystem
             }
         }
 
+        /// <summary>
+        /// Calculates the map size in tiles
+        /// </summary>
+        /// <param name="settings">Settings which descibes the map</param>
+        /// <returns>Returns the map size</returns>
         private int GetMapSize(GeneratorSettings settings)
         {
             int radiusInMeter = random.Next(settings.MinSizeInMeter, settings.MaxSizeInMeter);
@@ -208,6 +270,18 @@ namespace TileMapSystem
             return (int)Math.Round(u / settings.MeterPerTile);
         }
 
+        /// <summary>
+        /// Create the first (height) layer with circular areas
+        /// </summary>
+        /// <param name="mapIndex">Index of the map</param>
+        /// <param name="maps">Current grids</param>
+        /// <param name="edgeOverrides">Current edge override maps</param>
+        /// <param name="rowCount">Number of rows per grid</param>
+        /// <param name="columnCount">Number of columns per grid</param>
+        /// <param name="tileSize">Size of a tile in pixel</param>
+        /// <param name="meterPerTile">Size of a tile in meter</param>
+        /// <param name="area">Area that should be generated and placed on the given map</param>
+        /// <param name="allowEdgeOverflow">Allows areas to overlap tiles from other maps</param>
         private void CreateLayerOne(int mapIndex, byte[][] maps, byte[][] edgeOverrides, int rowCount, int columnCount, int tileSize, float meterPerTiles, AreaSpread area, bool allowEdgeOverflow)
         {
             int tilesChanged = 0;
@@ -227,6 +301,16 @@ namespace TileMapSystem
             }
         }
 
+        /// <summary>
+        /// Create the first (height) layer with circular areas
+        /// </summary>
+        /// <param name="map">The map where the area should be placed on</param>
+        /// <param name="rowCount">Number of rows per grid</param>
+        /// <param name="columnCount">Number of columns per grid</param>
+        /// <param name="tileSize">Size of a tile in pixel</param>
+        /// <param name="meterPerTile">Size of a tile in meter</param>
+        /// <param name="area">Area that should be generated and placed on the given map</param>
+        /// <param name="allowEdgeManipulation">Allows areas to overlap tiles from other maps</param>
         private void CreateLayerOne(byte[] map, int rowCount, int columnCount, int tileSize, float meterPerTiles, AreaSpread area, bool allowEdgeManipulation)
         {
             float tilesChanged = 0;
@@ -246,6 +330,20 @@ namespace TileMapSystem
             }
         }
 
+        /// <summary>
+        /// Create a circular area to a given map
+        /// </summary>
+        /// <param name="map">The map where the area should be placed on</param>
+        /// <param name="rowIndex">Tile row index</param>
+        /// <param name="columnIndex">Tile column index</param>
+        /// <param name="rowCount">Number of rows per grid</param>
+        /// <param name="columnCount">Number of columns per grid</param>
+        /// <param name="radius">Radius of the circle</param>
+        /// <param name="tileSize">Size of a tile in pixel</param>
+        /// <param name="metersPerTile">Size of a tile in meter</param>
+        /// <param name="flag">Flag for the circular area</param>
+        /// <param name="allowEdgeManipulation">Allows areas to overlap tiles from other maps</param>
+        /// <returns>Returns the number of changed tiles</returns>
         private int CreateCircleArea(byte[] map, int rowIndex, int columnIndex, int rowCount, int columnCount, int radius, int tileSize, float metersPerTile, byte flag, bool allowEdgeManipulation)
         {
             int modified = 0;
@@ -291,6 +389,23 @@ namespace TileMapSystem
             return modified;
         }
 
+        /// <summary>
+        /// Create a circular area to a given map
+        /// </summary>
+        /// <param name="mapIndex">Index of the map</param>
+        /// <param name="maps">Current grids</param>
+        /// <param name="edgeOverrides">Current edge override maps</param>
+        /// <param name="rowIndex">Tile row index</param>
+        /// <param name="columnIndex">Tile column index</param>
+        /// <param name="rowCount">Number of rows per grid</param>
+        /// <param name="columnCount">Number of columns per grid</param>
+        /// <param name="radius">Radius of the circle</param>
+        /// <param name="tileSize">Size of a tile in pixel</param>
+        /// <param name="metersPerTile">Size of a tile in meter</param>
+        /// <param name="flag">Flag for the circular area</param>
+        /// <param name="allowEdgeOverflow">Allows areas to overlap tiles from other maps</param>
+        /// <param name="useEdgeNoise">Adds edge noise to the generated area</param>
+        /// <returns>Returns the number of changed tiles</returns>
         private int CreateCircleArea(int mapIndex, byte[][] maps, byte[][] edgeOverrides, int rowIndex, int columnIndex, int rowCount, int columnCount, int radius, int tileSize, float metersPerTile, byte flag, bool allowEdgeOverflow, bool useEdgeNoise)
         {
             int modified = 0;
@@ -354,6 +469,17 @@ namespace TileMapSystem
             return modified;
         }
 
+        /// <summary>
+        /// Adds edge noise to next to a give tile position
+        /// </summary>
+        /// <param name="row">Tile row index</param>
+        /// <param name="column">Tile column index</param>
+        /// <param name="rowCount">Number of rows per grid</param>
+        /// <param name="columnCount">Number of columns per grid</param>
+        /// <param name="flag">Edge noise flag</param>
+        /// <param name="percentage">Percentage to add edge noise</param>
+        /// <param name="allowedDirection">Direction of free tiles</param>
+        /// <param name="map">A Representation of a grid</param>
         private void AddEdgeNoise(int row, int column, int rowCount, int columnCount, byte flag, float percentage, List<Direction> allowedDirection, byte[] map)
         {
             if (allowedDirection.Count > 0)
@@ -388,6 +514,15 @@ namespace TileMapSystem
             }
         }
 
+        /// <summary>
+        /// Checks if the surrounding tile are free or not 
+        /// </summary>
+        /// <param name="row">Row index of the tile</param>
+        /// <param name="column">Column index of the tile</param>
+        /// <param name="rowCount">Number of rows per grid</param>
+        /// <param name="columnCount">Number of columns per grid</param>
+        /// <param name="map">A representation of a grid</param>
+        /// <returns>Returns all directions with free tiles</returns>
         private List<Direction> CheckDirections(int row, int column, int rowCount, int columnCount, byte[] map)
         {
             List<Direction> directions = new List<Direction>();
@@ -408,6 +543,15 @@ namespace TileMapSystem
             return directions;
         }
 
+        /// <summary>
+        /// Checks whenther a tile position is free or out of range
+        /// </summary>
+        /// <param name="row">Row index of the tile</param>
+        /// <param name="column">Column index of the tile</param>
+        /// <param name="columnCount">Number of column per grid</param>
+        /// <param name="rowCount">Number of rows per grid</param>
+        /// <param name="map">A representation of a grid</param>
+        /// <returns>Retruns 0 if the tile is out of range or has already a flag, otherwise 1</returns>
         private int CheckDirection(int row, int column, int columnCount, int rowCount, byte[] map)
         {
             if (TileMathHelper.IsOutOfRange(row, column, rowCount, columnCount))
@@ -417,6 +561,14 @@ namespace TileMapSystem
             return map[TileMathHelper.ToId(row, column, columnCount)] == 0 ? 1 : 0;
         }
 
+        /// <summary>
+        /// Deframgment maps and adds edge noise
+        /// </summary>
+        /// <param name="maps">Current gird and it's surrounding grids</param>
+        /// <param name="areas">Area spread information to add edge noise if neccessary</param>
+        /// <param name="suroundingGrids">Grid ids of all surrounding grids</param>
+        /// <param name="rowCount">Number of row per grid</param>
+        /// <param name="columnCount">Number of columns per grid</param>
         private void DefragmentMaps(byte[][] maps, AreaSpread[] areas, int[] suroundingGrids, int rowCount, int columnCount)
         {
             for (int i = 0; i < maps.Length; i++)
@@ -443,8 +595,8 @@ namespace TileMapSystem
 
                                     if (areas[j].ConnectEqualFlags)
                                     {
-                                        TryConnect(r, c, rowCount, columnCount, maps[i], flag, areas[j].ConnectDistance, false);
-                                        TryConnect(r, c, rowCount, columnCount, maps[i], flag, areas[j].ConnectDistance, true);
+                                        TryConnect(r, c, rowCount, columnCount, maps[i], flag, areas[j].ConnectDistance, DirectionAxis.Vertical);
+                                        TryConnect(r, c, rowCount, columnCount, maps[i], flag, areas[j].ConnectDistance, DirectionAxis.Horizontal);
                                     }
                                 }
                             }
@@ -454,7 +606,18 @@ namespace TileMapSystem
             }
         }
 
-        private void TryConnect(int row, int column, int rowCount, int columnCount, byte[] map, byte flag, int distance, bool columnCheck)
+        /// <summary>
+        /// Tries to connects close areas with the same flag
+        /// </summary>
+        /// <param name="row">Tile row index</param>
+        /// <param name="column">Tile column index</param>
+        /// <param name="rowCount">Grid row count</param>
+        /// <param name="columnCount">Grid column count</param>
+        /// <param name="map">Current map as flatten array</param>
+        /// <param name="flag">tile id (flag)</param>
+        /// <param name="distance">Maximum tile distance between areas</param>
+        /// <param name="axis">Direction of connection</param>
+        private void TryConnect(int row, int column, int rowCount, int columnCount, byte[] map, byte flag, int distance, DirectionAxis axis)
         {
             bool connectPos = false;
             bool connectNeg = false;
@@ -463,7 +626,7 @@ namespace TileMapSystem
             int realColumn = column;
             for (int i = distance; i > 0; i--)
             {
-                if (columnCheck)
+                if (axis == DirectionAxis.Horizontal)
                     realColumn = column + i;
                 else
                     realRow = row + i;
@@ -487,7 +650,7 @@ namespace TileMapSystem
                     }
                 }
 
-                if (columnCheck)
+                if (axis == DirectionAxis.Horizontal)
                     realColumn = column - i;
                 else
                     realRow = row - i;

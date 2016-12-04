@@ -10,6 +10,9 @@ using System.Threading;
 
 namespace TileMapSystem
 {
+    /// <summary>
+    /// 
+    /// </summary>
     public class StreamedTileMap
     {
         private List<TileMapPart> maps;
@@ -123,6 +126,17 @@ namespace TileMapSystem
             }
         }
 
+        /// <summary>
+        /// Initzializes a new streamed tile map
+        /// </summary>
+        /// <param name="generator">Tile map generator</param>
+        /// <param name="spawnTileRow">Tile row index</param>
+        /// <param name="spawnTileColumn">Tile column index</param>
+        /// <param name="gridColumnCount">Number of grid columns</param>
+        /// <param name="gridRowCount">Number of grid rows</param>
+        /// <param name="tileRowCount">Number of tile rows per grid</param>
+        /// <param name="tileColumnCount">Number of tile columns per grid</param>
+        /// <param name="tileSize">Tile size in pixel</param>
         public StreamedTileMap(TileMapGenerator generator, int spawnTileRow, int spawnTileColumn, int gridColumnCount, int gridRowCount, int tileRowCount, int tileColumnCount, int tileSize)
         {
             maps = new List<TileMapPart>();
@@ -141,6 +155,17 @@ namespace TileMapSystem
             gridColumn = TileMathHelper.ConvertToTileIndex(gridColumn, gridColumnCount);
         }
 
+        /// <summary>
+        /// Initzializes a new streamed tile map
+        /// </summary>
+        /// <param name="spawnTileRow">Tile row index</param>
+        /// <param name="spawnTileColumn">Tile column index</param>
+        /// <param name="gridColumnCount">Number of grid columns</param>
+        /// <param name="gridRowCount">Number of grid rows</param>
+        /// <param name="tileRowCount">Number of tile rows per grid</param>
+        /// <param name="tileColumnCount">Number of tile columns per grid</param>
+        /// <param name="tileSize">Tile size in pixel</param>
+        /// <param name="maps">Loaded grids</param>
         public StreamedTileMap(int spawnTileRow, int spawnTileColumn, int gridColumnCount, int gridRowCount, int tileRowCount, int tileColumnCount, int tileSize, List<TileMapPart> maps)
         {
             this.maps = maps;
@@ -157,12 +182,21 @@ namespace TileMapSystem
             gridColumn = TileMathHelper.ConvertToTileIndex(gridColumn, gridColumnCount);
         }
 
+        /// <summary>
+        /// Adds a new grid to the streamed tile map
+        /// </summary>
+        /// <param name="mapPart"></param>
         public void Add(TileMapPart mapPart)
         {
             if(!maps.Contains(mapPart))
                 maps.Add(mapPart);
         }
 
+        /// <summary>
+        /// Updates the grids based one the given tile location
+        /// </summary>
+        /// <param name="currentTileRow">Tile row index</param>
+        /// <param name="currentTileColumn">Tile column index</param>
         public void Update(int currentTileRow, int currentTileColumn)
         {
             int newGridRow = (int)Math.Floor((double)currentTileRow / (double)TileRowCount);
@@ -189,13 +223,19 @@ namespace TileMapSystem
             }
         }
 
-        public byte[] GetTileMapInScreen(int screenWidth, int screenHeight)
+        /// <summary>
+        /// Determine all tiles on screen based on the given viewport
+        /// </summary>
+        /// <param name="viewportWidth">Viewport width in pixel</param>
+        /// <param name="viewportHeight">Viewport height in pixel</param>
+        /// <returns>Returns a flatten byte array which represants the tiles</returns>
+        public byte[] GetTileMapInScreen(int viewportWidth, int viewportHeight)
         {
-            ScreenWidth = screenWidth;
-            ScreenHeight = screenHeight;
+            ScreenWidth = viewportWidth;
+            ScreenHeight = viewportHeight;
 
-            int screenColumnCount = (screenWidth / tileSize);
-            int screenRowCount = (screenHeight / tileSize);
+            int screenColumnCount = (viewportWidth / tileSize);
+            int screenRowCount = (viewportHeight / tileSize);
             byte[] tilesInScreen = new byte[screenRowCount * screenColumnCount];
 
             int posRow = tileRow + (screenRowCount / 2);
@@ -236,7 +276,13 @@ namespace TileMapSystem
             return tilesInScreen;
         }
 
-        public int GetTile(int row, int column)
+        /// <summary>
+        /// Determine the flag of a given tile location
+        /// </summary>
+        /// <param name="row">Tile row index</param>
+        /// <param name="column">Tile column index</param>
+        /// <returns>Returns the flag of a tile</returns>
+        public byte GetTile(int row, int column)
         {
             int newGridRow = (int)Math.Floor((double)row / (double)TileRowCount);
             int newGridColumn = (int)Math.Floor((double)column / (double)TileColumnCount);
@@ -253,12 +299,21 @@ namespace TileMapSystem
             return maps[currentMapIndex].MapSurface[TileMathHelper.ToId(tileRow, tileColumn, TileColumnCount)];
         }
 
+        /// <summary>
+        /// Changes the map to a new streamed tile map (Tile map will be updated on the next update)
+        /// </summary>
+        /// <param name="map">New streamed tile map</param>
         public void ChangeMap(StreamedTileMap map)
         {
             newMap = map;
             newMapAvalible = true;
         }
 
+        /// <summary>
+        /// Starts new map generation 
+        /// </summary>
+        /// <param name="currentTileRow">Tile row index</param>
+        /// <param name="currentTileColumn">tile column index</param>
         private void Resize(int currentTileRow, int currentTileColumn)
         {
             if (generator != null)
@@ -280,6 +335,12 @@ namespace TileMapSystem
             }
         }
 
+        /// <summary>
+        /// Tries to update the map when the maps it's fully loaded
+        /// </summary>
+        /// <param name="currentGridRow">Grid row index</param>
+        /// <param name="currentGridColumn">Grid column index</param>
+        /// <returns>Returns true on success</returns>
         private bool TryMapUpdate(int currentGridRow, int currentGridColumn)
         {
             if (newMapAvalible)
@@ -298,26 +359,6 @@ namespace TileMapSystem
                 newMapAvalible = false;
             }
             return false;
-        }
-    }
-
-    public struct TileMapPart
-    {
-        public byte[] MapSurface;
-        public byte[] PathPlacement;
-        public byte[] ObjectPlacement;
-        public int GridColumn;
-        public int GridRow;
-        public int Id;
-
-        public TileMapPart(int id, byte[] mapSurface, byte[] pathPlactment, byte[] objectPlacement, int gridColumn, int gridRow)
-        {
-            Id = id;
-            MapSurface = mapSurface;
-            PathPlacement = pathPlactment;
-            ObjectPlacement = objectPlacement;
-            GridColumn = gridColumn;
-            GridRow = gridRow;
         }
     }
 }

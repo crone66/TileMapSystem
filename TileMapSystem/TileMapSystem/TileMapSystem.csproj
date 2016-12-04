@@ -48,6 +48,7 @@
     <Compile Include="StreamedTileMap.cs" />
     <Compile Include="TileMapGenerator.cs" />
     <Compile Include="TileMapManager.cs" />
+    <Compile Include="TileMapPart.cs" />
     <Compile Include="TileMathHelper.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

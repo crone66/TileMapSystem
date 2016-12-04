@@ -6,11 +6,13 @@ using System.Threading.Tasks;
 
 namespace TileMapSystem
 {
+    /// <summary>
+    /// 
+    /// </summary>
     public struct AreaSpread
     {
         public byte Flag;
         public float Percentage;
-        public float Temperature;
         public int MinSizeInMeter;
         public int MaxSizeInMeter;
         public bool UseEdgeNoise;
@@ -19,11 +21,22 @@ namespace TileMapSystem
         public bool ConnectEqualFlags;
         public int ConnectDistance;
 
-        public AreaSpread(byte flag, float percentage, float temperature, int minSizeInMeter, int maxSizeInMeter, bool useEdgeNoise, bool connectEqualFlags, int connectDistance, SpreadOption spreadType, LayerType layer)
+        /// <summary>
+        /// AreaSpread describes areas that should be placed on the map
+        /// </summary>
+        /// <param name="flag">flag represants the tile id</param>
+        /// <param name="percentage">Percentage of map space covered by this flag</param>
+        /// <param name="minSizeInMeter">Minimum size of area in meter</param>
+        /// <param name="maxSizeInMeter">Maximum size of area in meter</param>
+        /// <param name="useEdgeNoise">Can be used to add aliasing to avoid symmetric areas</param>
+        /// <param name="connectEqualFlags">Areas with the same flags will be connected, all free tiles within a give distance will be set to the flag value</param>
+        /// <param name="connectDistance">Maximum distance between two areas with the same flag</param>
+        /// <param name="spreadType">Geometrical form of the area</param>
+        /// <param name="layer">Dicides which generation algorithm will be used</param>
+        public AreaSpread(byte flag, float percentage, int minSizeInMeter, int maxSizeInMeter, bool useEdgeNoise, bool connectEqualFlags, int connectDistance, SpreadOption spreadType, LayerType layer)
         {
             Flag = flag;
             Percentage = percentage;
-            Temperature = temperature;
             MinSizeInMeter = minSizeInMeter;
             MaxSizeInMeter = maxSizeInMeter;
             UseEdgeNoise = useEdgeNoise;
@@ -34,6 +47,9 @@ namespace TileMapSystem
         }
     }
 
+    /// <summary>
+    /// Enumaration of spread options to choose the form of the Spread
+    /// </summary>
     public enum SpreadOption
     {
         Line,
@@ -41,6 +57,9 @@ namespace TileMapSystem
         Rectangle
     }
 
+    /// <summary>
+    /// Enumeration of layer types to choose the generation algorithm
+    /// </summary>
     public enum LayerType
     {
         Height = 1,
