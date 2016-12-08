@@ -151,8 +151,8 @@ namespace TileMapSystem
             gridRow = (int)Math.Floor((double)spawnTileRow / (double)tileRowCount);
             gridColumn = (int)Math.Floor((double)spawnTileColumn / (double)tileColumnCount);
 
-            gridRow = TileMathHelper.ConvertToTileIndex(gridRow, gridRowCount);
-            gridColumn = TileMathHelper.ConvertToTileIndex(gridColumn, gridColumnCount);
+            gridRow = TileMathHelper.FixTileIndex(gridRow, gridRowCount);
+            gridColumn = TileMathHelper.FixTileIndex(gridColumn, gridColumnCount);
         }
 
         /// <summary>
@@ -178,8 +178,8 @@ namespace TileMapSystem
             tileColumn = spawnTileColumn;
             gridRow = (int)Math.Floor((double)spawnTileRow / (double)tileRowCount);
             gridColumn = (int)Math.Floor((double)spawnTileColumn / (double)tileColumnCount);
-            gridRow = TileMathHelper.ConvertToTileIndex(gridRow, gridRowCount);
-            gridColumn = TileMathHelper.ConvertToTileIndex(gridColumn, gridColumnCount);
+            gridRow = TileMathHelper.FixTileIndex(gridRow, gridRowCount);
+            gridColumn = TileMathHelper.FixTileIndex(gridColumn, gridColumnCount);
         }
 
         /// <summary>
@@ -199,16 +199,13 @@ namespace TileMapSystem
         /// <param name="currentTileColumn">Tile column index</param>
         public void Update(int currentTileRow, int currentTileColumn)
         {
-            int newGridRow = (int)Math.Floor((double)currentTileRow / (double)TileRowCount);
-            int newGridColumn = (int)Math.Floor((double)currentTileColumn / (double)TileColumnCount);
-            if (TileMathHelper.IsOutOfRange(newGridRow, newGridColumn, GridRowCount, GridColumnCount))
-            {
-                newGridRow = TileMathHelper.ConvertToTileIndex(newGridRow, GridRowCount);
-                newGridColumn = TileMathHelper.ConvertToTileIndex(newGridColumn, GridColumnCount);
-            }
-            currentMapId = TileMathHelper.ToId(newGridRow, newGridColumn, GridColumnCount);
-            tileRow = TileMathHelper.ConvertToTileIndex(currentTileRow, TileRowCount);
-            tileColumn = TileMathHelper.ConvertToTileIndex(currentTileColumn, TileColumnCount);
+            int newGridRow;
+            int newGridColumn;
+            ConvertTileToGridPosition(currentTileRow, currentTileColumn, out newGridRow, out newGridColumn);
+
+            currentMapId = TileMathHelper.ToIndex(newGridRow, newGridColumn, GridColumnCount);
+            tileRow = TileMathHelper.FixTileIndex(currentTileRow, TileRowCount);
+            tileColumn = TileMathHelper.FixTileIndex(currentTileColumn, TileColumnCount);
 
             TryMapUpdate(newGridRow, newGridColumn);
 
@@ -255,20 +252,20 @@ namespace TileMapSystem
                     if (TileMathHelper.IsOutOfRange(r, c, TileRowCount, TileColumnCount))
                     {
                         newMapIndex = TileMathHelper.GetMapIndex(r, c, TileRowCount, TileColumnCount, newMapIndex);
-                        realRow = TileMathHelper.ConvertToTileIndex(r, TileRowCount);
-                        realColumn = TileMathHelper.ConvertToTileIndex(c, TileColumnCount);
+                        realRow = TileMathHelper.FixTileIndex(r, TileRowCount);
+                        realColumn = TileMathHelper.FixTileIndex(c, TileColumnCount);
                     }
 
                     //GetValues and merge
                     if (newMapIndex < 0)
                     {
-                        tilesInScreen[TileMathHelper.ToId(rowIndex, columnIndex++, screenColumnCount)] = 255;
+                        tilesInScreen[TileMathHelper.ToIndex(rowIndex, columnIndex++, screenColumnCount)] = 255;
                         int newGridRow = (int)Math.Floor((double)r / (double)TileRowCount);
                         int newGridColumn = (int)Math.Floor((double)c / (double)TileColumnCount);
                         GridGenerationIsSlow?.Invoke(this, new GridEventArgs(newGridRow, newGridColumn, GridRow, GridColumn, false));
                     }
                     else
-                        tilesInScreen[TileMathHelper.ToId(rowIndex, columnIndex++, screenColumnCount)] = maps[newMapIndex].MapSurface[TileMathHelper.ToId(realRow, realColumn, TileColumnCount)]; 
+                        tilesInScreen[TileMathHelper.ToIndex(rowIndex, columnIndex++, screenColumnCount)] = maps[newMapIndex].MapSurface[TileMathHelper.ToIndex(realRow, realColumn, TileColumnCount)]; 
                 }
                 rowIndex++;
             }
@@ -277,26 +274,74 @@ namespace TileMapSystem
         }
 
         /// <summary>
+        /// Converts a pixel position into a tile index
+        /// </summary>
+        /// <param name="x">X position</param>
+        /// <param name="y">Y position</param>
+        /// <returns>Returns a tile index from flatten map array</returns>
+        public int GetTileIndex(int x, int y)
+        {
+            int column = x / tileSize;
+            int row = y / tileSize;
+            return TileMathHelper.ToIndex(row, column, GridColumnCount);
+        }
+
+        /// <summary>
         /// Determine the flag of a given tile location
         /// </summary>
         /// <param name="row">Tile row index</param>
         /// <param name="column">Tile column index</param>
         /// <returns>Returns the flag of a tile</returns>
-        public byte GetTile(int row, int column)
+        public byte GetTileValue(int row, int column)
         {
-            int newGridRow = (int)Math.Floor((double)row / (double)TileRowCount);
-            int newGridColumn = (int)Math.Floor((double)column / (double)TileColumnCount);
-            if (TileMathHelper.IsOutOfRange(newGridRow, newGridColumn, GridRowCount, GridColumnCount))
-            {
-                newGridRow = TileMathHelper.ConvertToTileIndex(newGridRow, GridRowCount);
-                newGridColumn = TileMathHelper.ConvertToTileIndex(newGridColumn, GridColumnCount);
-            }
+            int newGridRow;
+            int newGridColumn;
+            ConvertTileToGridPosition(row, column, out newGridRow, out newGridColumn);
 
-            int tileMapId = TileMathHelper.ToId(newGridRow, newGridColumn, GridColumnCount);
-            int tileRow = TileMathHelper.ConvertToTileIndex(row, TileRowCount);
-            int tileColumn = TileMathHelper.ConvertToTileIndex(column, TileColumnCount);
+            int tileMapId = TileMathHelper.ToIndex(newGridRow, newGridColumn, GridColumnCount);
+            int tileRow = TileMathHelper.FixTileIndex(row, TileRowCount);
+            int tileColumn = TileMathHelper.FixTileIndex(column, TileColumnCount);
             int currentMapIndex = maps.FindIndex(m => m.Id == tileMapId);
-            return maps[currentMapIndex].MapSurface[TileMathHelper.ToId(tileRow, tileColumn, TileColumnCount)];
+
+            return maps[currentMapIndex].MapSurface[TileMathHelper.ToIndex(tileRow, tileColumn, TileColumnCount)];
+        }
+
+        /// <summary>
+        /// Sets a tile value
+        /// </summary>
+        /// <param name="row">Tile row index</param>
+        /// <param name="column">Tile column index</param>
+        /// <param name="value">New tile value</param>
+        public void SetTileValue(int row, int column, byte value)
+        {
+            int newGridRow;
+            int newGridColumn;
+            ConvertTileToGridPosition(row, column, out newGridRow, out newGridColumn);
+
+            int tileMapId = TileMathHelper.ToIndex(newGridRow, newGridColumn, GridColumnCount);
+            int tileRow = TileMathHelper.FixTileIndex(row, TileRowCount);
+            int tileColumn = TileMathHelper.FixTileIndex(column, TileColumnCount);
+            int currentMapIndex = maps.FindIndex(m => m.Id == tileMapId);
+
+            maps[currentMapIndex].MapSurface[TileMathHelper.ToIndex(tileRow, tileColumn, TileColumnCount)] = value;
+        }
+
+        /// <summary>
+        /// Returns a grid position of a given tile position
+        /// </summary>
+        /// <param name="row">Tile row index</param>
+        /// <param name="column">Tile column index</param>
+        /// <param name="gridRow">Returns the grid row index</param>
+        /// <param name="gridColumn">Returns the grid column index</param>
+        public void ConvertTileToGridPosition(int row, int column, out int gridRow, out int gridColumn)
+        {
+            gridRow = (int)Math.Floor((double)row / (double)TileRowCount);
+            gridColumn = (int)Math.Floor((double)column / (double)TileColumnCount);
+            if (TileMathHelper.IsOutOfRange(gridRow, gridColumn, GridRowCount, GridColumnCount))
+            {
+                gridRow = TileMathHelper.FixTileIndex(gridRow, GridRowCount);
+                gridColumn = TileMathHelper.FixTileIndex(gridColumn, GridColumnCount);
+            }
         }
 
         /// <summary>
