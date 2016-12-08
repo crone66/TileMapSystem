@@ -14,7 +14,7 @@ namespace TileMapSystem
         /// <param name="index">row or column index</param>
         /// <param name="count">row or column count</param>
         /// <returns>Returns a valid tile index</returns>
-        public static int ConvertToTileIndex(int index, int count)
+        public static int FixTileIndex(int index, int count)
         {
             return (index >= count ? index - ((int)Math.Floor((double)index / (double)count) * count) : (index < 0 ? (((int)Math.Floor((double)index / (double)count) * count) * -1) + index : index));
         }
@@ -48,13 +48,13 @@ namespace TileMapSystem
         }
 
         /// <summary>
-        /// Returns a tile id
+        /// Returns a tile index
         /// </summary>
         /// <param name="row">tile row index</param>
         /// <param name="column">tile column index</param>
         /// <param name="columnCount">tile columns per grid</param>
-        /// <returns>Returns a tile id</returns>
-        public static int ToId(int row, int column, int columnCount)
+        /// <returns>Returns a tile index</returns>
+        public static int ToIndex(int row, int column, int columnCount)
         {
             return (row * columnCount) + column;
         }
@@ -97,9 +97,9 @@ namespace TileMapSystem
         /// <returns></returns>
         public static int CalculateGridTranslation(int translationX, int translationY, int sourceX, int sourceY, int gridRowCount, int gridColumnCount)
         {
-            int gridNumX = ConvertToTileIndex(sourceX + translationX, gridColumnCount);
-            int gridNumY = ConvertToTileIndex(sourceY + translationY, gridRowCount);
-            return ToId(gridNumY, gridNumX, gridColumnCount);
+            int gridNumX = FixTileIndex(sourceX + translationX, gridColumnCount);
+            int gridNumY = FixTileIndex(sourceY + translationY, gridRowCount);
+            return ToIndex(gridNumY, gridNumX, gridColumnCount);
         }
 
         /// <summary>
@@ -120,6 +120,19 @@ namespace TileMapSystem
             }    
             
             return result;
+        }
+
+        /// <summary>
+        /// Converts a tile array index to a tile position
+        /// </summary>
+        /// <param name="index">Tile index in flatten array</param>
+        /// <param name="columnCount">Column count of tilemap</param>
+        /// <param name="row">Returns the row index of the tile</param>
+        /// <param name="column">Returns the column index of the tile</param>
+        public static void ToPosition(int index, int columnCount, out int row, out int column)
+        {
+            row = (int)Math.Floor(index / (double)columnCount);
+            column = (index % columnCount);
         }
     }
 }

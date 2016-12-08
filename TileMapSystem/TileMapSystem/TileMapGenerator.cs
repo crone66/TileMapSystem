@@ -222,11 +222,13 @@ namespace TileMapSystem
             for (int i = 0; i < maps.Length; i++)
             {
                 int gridId = suroundingGrids[i];
-                int gridRow = (int)Math.Floor((double)gridId / (double)gridsPerRow);
-                int gridColumn = (gridId % gridsPerRow);
+               
+                int gridRow;
+                int gridColumn;
+                TileMathHelper.ToPosition(gridId, gridsPerRow, out gridRow, out gridColumn);
 
-                gridRow = TileMathHelper.ConvertToTileIndex(gridRow, gridsPerRow);
-                gridColumn = TileMathHelper.ConvertToTileIndex(gridColumn, gridsPerRow);
+                gridRow = TileMathHelper.FixTileIndex(gridRow, gridsPerRow);
+                gridColumn = TileMathHelper.FixTileIndex(gridColumn, gridsPerRow);
 
                 TileMapPart part = new TileMapPart(gridId, maps[i], null, null, gridColumn, gridRow);
                 streamedTileMap.Add(part);
@@ -290,7 +292,7 @@ namespace TileMapSystem
             {
                 int row = random.Next(0, rowCount);
                 int column = random.Next(0, columnCount);
-                int fieldIndex = TileMathHelper.ToId(row, column, columnCount);
+                int fieldIndex = TileMathHelper.ToIndex(row, column, columnCount);
                 int minRadius = random.Next(area.MinSizeInMeter, area.MaxSizeInMeter + 1);
 
                 if (maps[mapIndex][fieldIndex] == 0 || maps[mapIndex][fieldIndex] == area.Flag)
@@ -319,7 +321,7 @@ namespace TileMapSystem
             {
                 int row = random.Next(0, rowCount);
                 int column = random.Next(0, columnCount);
-                int fieldIndex = TileMathHelper.ToId(row, column, columnCount);
+                int fieldIndex = TileMathHelper.ToIndex(row, column, columnCount);
                 int minRadius = random.Next(area.MinSizeInMeter, area.MaxSizeInMeter + 1);
 
                 if(map[fieldIndex] == 0 || map[fieldIndex] == area.Flag)
@@ -363,8 +365,8 @@ namespace TileMapSystem
                     {
                         if (allowEdgeManipulation)
                         {
-                            realRow = TileMathHelper.ConvertToTileIndex(r, rowCount);
-                            realColumn = TileMathHelper.ConvertToTileIndex(c, columnCount);
+                            realRow = TileMathHelper.FixTileIndex(r, rowCount);
+                            realColumn = TileMathHelper.FixTileIndex(c, columnCount);
                         }
                         else
                         {
@@ -376,7 +378,7 @@ namespace TileMapSystem
                     int distance = TileMathHelper.GetDistance(x, y, c * tileSize, r * tileSize);
                     if (distance <= minRadiusPx)
                     {
-                        int id = TileMathHelper.ToId(realRow, realColumn, columnCount);
+                        int id = TileMathHelper.ToIndex(realRow, realColumn, columnCount);
                         if (map[id] == 0)
                         {
                             map[id] = flag;
@@ -429,8 +431,8 @@ namespace TileMapSystem
                             currentMapIndex = TileMathHelper.GetMapIndex(r, c, rowCount, columnCount, currentMapIndex);
                             if (currentMapIndex >= 0)
                             {
-                                realRow = TileMathHelper.ConvertToTileIndex(r, rowCount);
-                                realColumn = TileMathHelper.ConvertToTileIndex(c, columnCount);
+                                realRow = TileMathHelper.FixTileIndex(r, rowCount);
+                                realColumn = TileMathHelper.FixTileIndex(c, columnCount);
                             }
                             else
                             {
@@ -446,7 +448,7 @@ namespace TileMapSystem
                     int distance = TileMathHelper.GetDistance(x, y, c * tileSize, r * tileSize);
                     if (distance <= minRadiusPx)
                     {
-                        int id = TileMathHelper.ToId(realRow, realColumn, columnCount);
+                        int id = TileMathHelper.ToIndex(realRow, realColumn, columnCount);
                         if (mapIndex == currentMapIndex)
                         {
                             if(maps[currentMapIndex][id] == 0)
@@ -502,7 +504,7 @@ namespace TileMapSystem
                         return;
 
                     allowedDirection = CheckDirections(row, column, rowCount, columnCount, map);
-                    int id = TileMathHelper.ToId(row, column, columnCount);
+                    int id = TileMathHelper.ToIndex(row, column, columnCount);
                     if (map[id] == 0)
                     {
                         map[id] = flag;
@@ -558,7 +560,7 @@ namespace TileMapSystem
             {
                 return 0;
             }
-            return map[TileMathHelper.ToId(row, column, columnCount)] == 0 ? 1 : 0;
+            return map[TileMathHelper.ToIndex(row, column, columnCount)] == 0 ? 1 : 0;
         }
 
         /// <summary>
@@ -579,7 +581,7 @@ namespace TileMapSystem
                 {
                     for (int c = 0; c < columnCount; c++)
                     {
-                        byte flag = maps[i][TileMathHelper.ToId(r, c, columnCount)];
+                        byte flag = maps[i][TileMathHelper.ToIndex(r, c, columnCount)];
                         if (flag != 0)
                         {
                             for (int j = 0; j < areas.Length; j++)
@@ -633,7 +635,7 @@ namespace TileMapSystem
 
                 if (!TileMathHelper.IsOutOfRange(realRow, realColumn, rowCount, columnCount))
                 {
-                    int id = TileMathHelper.ToId(realRow, realColumn, columnCount);
+                    int id = TileMathHelper.ToIndex(realRow, realColumn, columnCount);
                     if (!connectPos)
                     {
                         if (map[id] == flag)
@@ -656,7 +658,7 @@ namespace TileMapSystem
                     realRow = row - i;
                 if (!TileMathHelper.IsOutOfRange(realRow, realColumn, rowCount, columnCount))
                 {
-                    int id = TileMathHelper.ToId(realRow, realColumn, columnCount);
+                    int id = TileMathHelper.ToIndex(realRow, realColumn, columnCount);
                     if (!connectNeg)
                     {
                         if (map[id] == flag)
