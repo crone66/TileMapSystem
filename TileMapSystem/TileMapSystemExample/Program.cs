@@ -29,7 +29,7 @@ namespace TileMapMangerExample
                 Stopwatch watch = new Stopwatch();
                 watch.Start();
                 GeneratorSettings settings = new GeneratorSettings(1, 50, 1.5f, 1000000, 10000000, true, 1000f);
-                AreaSpread[] spreads = new AreaSpread[2] { new AreaSpread(1, 0.30f, 20, 250, true, true, 5, SpreadOption.Circle, LayerType.Height), new AreaSpread(2, 0.125f, 20, 200, true, true, 5, SpreadOption.Circle, LayerType.Height) };
+                AreaSpread[] spreads = new AreaSpread[2] { new AreaSpread(1, 1, 0.30f, 20, 250, true, true, 5, SpreadOption.Circle, LayerType.Height), new AreaSpread(2, 1, 0.125f, 20, 200, true, true, 5, SpreadOption.Circle, LayerType.Height) };
 
                 tileMapManager = new TileMapManager(settings, spreads);
                 tileMapManager.Changelevel(settings, startX, startY, false);
@@ -38,7 +38,7 @@ namespace TileMapMangerExample
                 double seconds = watch.Elapsed.TotalSeconds;
 
                 tileMapManager.Update(startY, startX);
-                byte[] screenMap = map.GetTileMapInScreen(800, 600);
+                Tile[] screenMap = map.GetTileMapInScreen(800, 600);
                 SaveToFile(screenMap, "screenMap"+b.ToString(), 800 / 50);
 
 
@@ -81,7 +81,7 @@ namespace TileMapMangerExample
                 {
                     watch.Restart();
                     tileMapManager.Update(endY - i, endX - i);
-                    byte[] data = map.GetTileMapInScreen(800, 600);
+                    Tile[] data = map.GetTileMapInScreen(800, 600);
                     watch.Stop();
                     update2 = watch.Elapsed.TotalMilliseconds;
                     sum += update2;
@@ -145,7 +145,7 @@ namespace TileMapMangerExample
             }
         }
 
-        private static int SaveToFile(byte[] map, string fileName, int columnCount)
+        private static int SaveToFile(Tile[] map, string fileName, int columnCount)
         {
             int counter = -1;
             List<string> lines = new List<string>();
@@ -163,7 +163,7 @@ namespace TileMapMangerExample
                     }
                 }
 
-                sb.Append(Convert.ToInt32(map[(counter * columnCount) + mod]));
+                sb.Append(Convert.ToInt32(map[(counter * columnCount) + mod].Id.ToString()));
             }
 
             System.IO.File.WriteAllLines(fileName + ".txt", lines.ToArray());

@@ -11,6 +11,7 @@ namespace TileMapSystem
     /// </summary>
     public struct AreaSpread
     {
+        public ushort Id;
         public byte Flag;
         public float Percentage;
         public int MinSizeInMeter;
@@ -24,7 +25,8 @@ namespace TileMapSystem
         /// <summary>
         /// AreaSpread describes areas that should be placed on the map
         /// </summary>
-        /// <param name="flag">flag represants the tile id</param>
+        /// <param name="id">Mapped tile id</param>
+        /// <param name="flag">Tile flags</param>
         /// <param name="percentage">Percentage of map space covered by this flag</param>
         /// <param name="minSizeInMeter">Minimum size of area in meter</param>
         /// <param name="maxSizeInMeter">Maximum size of area in meter</param>
@@ -33,8 +35,9 @@ namespace TileMapSystem
         /// <param name="connectDistance">Maximum distance between two areas with the same flag</param>
         /// <param name="spreadType">Geometrical form of the area</param>
         /// <param name="layer">Dicides which generation algorithm will be used</param>
-        public AreaSpread(byte flag, float percentage, int minSizeInMeter, int maxSizeInMeter, bool useEdgeNoise, bool connectEqualFlags, int connectDistance, SpreadOption spreadType, LayerType layer)
+        public AreaSpread(ushort id, byte flag, float percentage, int minSizeInMeter, int maxSizeInMeter, bool useEdgeNoise, bool connectEqualFlags, int connectDistance, SpreadOption spreadType, LayerType layer)
         {
+            Id = id;
             Flag = flag;
             Percentage = percentage;
             MinSizeInMeter = minSizeInMeter;

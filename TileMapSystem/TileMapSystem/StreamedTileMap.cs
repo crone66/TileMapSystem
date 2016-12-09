@@ -226,14 +226,14 @@ namespace TileMapSystem
         /// <param name="viewportWidth">Viewport width in pixel</param>
         /// <param name="viewportHeight">Viewport height in pixel</param>
         /// <returns>Returns a flatten byte array which represants the tiles</returns>
-        public byte[] GetTileMapInScreen(int viewportWidth, int viewportHeight)
+        public Tile[] GetTileMapInScreen(int viewportWidth, int viewportHeight)
         {
             ScreenWidth = viewportWidth;
             ScreenHeight = viewportHeight;
 
             int screenColumnCount = (viewportWidth / tileSize);
             int screenRowCount = (viewportHeight / tileSize);
-            byte[] tilesInScreen = new byte[screenRowCount * screenColumnCount];
+            Tile[] tilesInScreen = new Tile[screenRowCount * screenColumnCount];
 
             int posRow = tileRow + (screenRowCount / 2);
             int negRow = tileRow - (screenRowCount / 2);
@@ -259,7 +259,7 @@ namespace TileMapSystem
                     //GetValues and merge
                     if (newMapIndex < 0)
                     {
-                        tilesInScreen[TileMathHelper.ToIndex(rowIndex, columnIndex++, screenColumnCount)] = 255;
+                        tilesInScreen[TileMathHelper.ToIndex(rowIndex, columnIndex++, screenColumnCount)] = new Tile(ushort.MaxValue, 255);
                         int newGridRow = (int)Math.Floor((double)r / (double)TileRowCount);
                         int newGridColumn = (int)Math.Floor((double)c / (double)TileColumnCount);
                         GridGenerationIsSlow?.Invoke(this, new GridEventArgs(newGridRow, newGridColumn, GridRow, GridColumn, false));
@@ -292,7 +292,7 @@ namespace TileMapSystem
         /// <param name="row">Tile row index</param>
         /// <param name="column">Tile column index</param>
         /// <returns>Returns the flag of a tile</returns>
-        public byte GetTileValue(int row, int column)
+        public Tile GetTileValue(int row, int column)
         {
             int newGridRow;
             int newGridColumn;
@@ -312,7 +312,7 @@ namespace TileMapSystem
         /// <param name="row">Tile row index</param>
         /// <param name="column">Tile column index</param>
         /// <param name="value">New tile value</param>
-        public void SetTileValue(int row, int column, byte value)
+        public void SetTileValue(int row, int column, Tile value)
         {
             int newGridRow;
             int newGridColumn;

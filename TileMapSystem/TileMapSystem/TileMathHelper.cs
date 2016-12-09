@@ -108,12 +108,12 @@ namespace TileMapSystem
         /// <param name="baseMap">Base map to override</param>
         /// <param name="overrides">override information</param>
         /// <returns></returns>
-        public static byte[] MergeMaps(byte[] baseMap, byte[] overrides)
+        public static Tile[] MergeMaps(Tile[] baseMap, Tile[] overrides)
         {
-            byte[] result = new byte[baseMap.Length];
+            Tile[] result = new Tile[baseMap.Length];
             for (int r = 0; r < result.Length; r++)
             {
-                if (overrides[r] != 0)
+                if (overrides[r].Id != 0)
                     result[r] = overrides[r];
                 else
                     result[r] = baseMap[r];
