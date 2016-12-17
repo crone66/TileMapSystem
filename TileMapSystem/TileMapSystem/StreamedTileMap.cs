@@ -292,8 +292,9 @@ namespace TileMapSystem
         /// <param name="row">Tile row index</param>
         /// <param name="column">Tile column index</param>
         /// <returns>Returns the flag of a tile</returns>
-        public Tile GetTileValue(int row, int column)
+        public bool GetTileValue(int row, int column, out Tile tile)
         {
+            tile = new Tile();
             int newGridRow;
             int newGridColumn;
             ConvertTileToGridPosition(row, column, out newGridRow, out newGridColumn);
@@ -303,7 +304,12 @@ namespace TileMapSystem
             int tileColumn = TileMathHelper.FixTileIndex(column, TileColumnCount);
             int currentMapIndex = maps.FindIndex(m => m.Id == tileMapId);
 
-            return maps[currentMapIndex].MapSurface[TileMathHelper.ToIndex(tileRow, tileColumn, TileColumnCount)];
+            if (currentMapIndex != -1)
+            {
+                tile = maps[currentMapIndex].MapSurface[TileMathHelper.ToIndex(tileRow, tileColumn, TileColumnCount)];
+                return true;
+            }
+            return false;
         }
 
         /// <summary>
@@ -312,7 +318,7 @@ namespace TileMapSystem
         /// <param name="row">Tile row index</param>
         /// <param name="column">Tile column index</param>
         /// <param name="value">New tile value</param>
-        public void SetTileValue(int row, int column, Tile value)
+        public bool SetTileValue(int row, int column, Tile value)
         {
             int newGridRow;
             int newGridColumn;
@@ -322,8 +328,13 @@ namespace TileMapSystem
             int tileRow = TileMathHelper.FixTileIndex(row, TileRowCount);
             int tileColumn = TileMathHelper.FixTileIndex(column, TileColumnCount);
             int currentMapIndex = maps.FindIndex(m => m.Id == tileMapId);
+            if (currentMapIndex != -1)
+            {
+                maps[currentMapIndex].MapSurface[TileMathHelper.ToIndex(tileRow, tileColumn, TileColumnCount)] = value;
+                return true;
+            }
 
-            maps[currentMapIndex].MapSurface[TileMathHelper.ToIndex(tileRow, tileColumn, TileColumnCount)] = value;
+            return false;
         }
 
         /// <summary>
