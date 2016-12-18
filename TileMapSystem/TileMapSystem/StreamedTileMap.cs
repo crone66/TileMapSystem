@@ -159,6 +159,7 @@ namespace TileMapSystem
             this.tileRowCount = tileRowCount;
             this.tileColumnCount = tileColumnCount;
             this.generator = generator;
+            currentMapIndex = 4;
             tileRow = spawnTileRow;
             tileColumn = spawnTileColumn;
             gridRow = (int)Math.Floor((double)spawnTileRow / (double)tileRowCount);
@@ -187,6 +188,7 @@ namespace TileMapSystem
             this.tileSize = tileSize;
             this.tileRowCount = tileRowCount;
             this.tileColumnCount = tileColumnCount;
+            currentMapIndex = 4;
             tileRow = spawnTileRow;
             tileColumn = spawnTileColumn;
             gridRow = (int)Math.Floor((double)spawnTileRow / (double)tileRowCount);
