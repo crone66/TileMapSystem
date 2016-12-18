@@ -134,5 +134,15 @@ namespace TileMapSystem
             row = (int)Math.Floor(index / (double)columnCount);
             column = (index % columnCount);
         }
+
+        public static int FixPositionIndex(int index, int gridCount, int countPerGrid)
+        {
+            if (index < 0)
+                return (gridCount * countPerGrid) - index;
+            else if(index > gridCount * countPerGrid)
+                return (index - (gridCount * countPerGrid));
+
+            return index;
+        }
     }
 }
