@@ -5,6 +5,7 @@ using TileMapSystem;
 using System.Diagnostics;
 using System.Threading;
 using System.IO;
+using System.Linq;
 
 namespace TileMapMangerExample
 {
@@ -29,24 +30,34 @@ namespace TileMapMangerExample
                 Stopwatch watch = new Stopwatch();
                 watch.Start();
                 GeneratorSettings settings = new GeneratorSettings(1, 50, 1.5f, 1000000, 10000000, true, 1000f);
-                AreaSpread[] spreads = new AreaSpread[2] { new AreaSpread(1, 1, 0.30f, 20, 250, true, true, 5, SpreadOption.Circle, LayerType.Height), new AreaSpread(2, 1, 0.125f, 20, 200, true, true, 5, SpreadOption.Circle, LayerType.Height) };
+                AreaSpread[] spreads = new AreaSpread[7] 
+                {
+                    new AreaSpread(1, 1, 0.30f, 20, 250, true, true, 5, SpreadOption.Circle, LayerType.Height),
+                    new AreaSpread(2, 1, 0.125f, 20, 200, true, true, 5, SpreadOption.Circle, LayerType.Height),
+                    new AreaSpread(2, 0, 0.01f, 1, 2, false, false, 0, SpreadOption.None, LayerType.PointsOfInterest),
+                    new AreaSpread(3, 0, 0.005f, 1, 2, false, false, 0, SpreadOption.None, LayerType.PointsOfInterest),
+                    new AreaSpread(4, 0, 0.005f, 1, 2, false, false, 0, SpreadOption.None, LayerType.PointsOfInterest),
+                    new AreaSpread(5, 0, 0.005f, 1, 2, false, false, 0, SpreadOption.None, LayerType.PointsOfInterest),
+                    new AreaSpread(6, 0, 0.005f, 1, 2, false, false, 0, SpreadOption.None, LayerType.PointsOfInterest)
+                };
 
                 tileMapManager = new TileMapManager(settings, spreads);
                 tileMapManager.Changelevel(settings, startX, startY, false);
                 StreamedTileMap map = tileMapManager.CurrentLevel;
+                
                 watch.Stop();
                 double seconds = watch.Elapsed.TotalSeconds;
 
                 tileMapManager.Update(startY, startX);
                 Tile[] screenMap = map.GetTileMapInScreen(800, 600);
-                SaveToFile(screenMap, "screenMap"+b.ToString(), 800 / 50);
+                SaveToFile(screenMap,null, "screenMap"+b.ToString(), 800 / 50);
 
 
                 watch.Restart();
                 int counter = 0;
                 for (int k = 0; k < 9; k++)
                 {
-                    counter += SaveToFile(map.Maps[k].MapSurface, "map" + b.ToString() + "_" + k.ToString(), map.TileColumnCount);
+                    counter += SaveToFile(map.Maps[k].MapSurface, map.Maps[k].ObjectPlacement, "map" + b.ToString() + "_" + k.ToString(), map.TileColumnCount);
                 }
 
                 watch.Stop();
@@ -65,7 +76,7 @@ namespace TileMapMangerExample
 
                 for (int k = 0; k < 9; k++)
                 {
-                    counter += SaveToFile(map.Maps[k].MapSurface, "map2_" + b.ToString() + "_" + k.ToString(), map.TileColumnCount);
+                    counter += SaveToFile(map.Maps[k].MapSurface, map.Maps[k].ObjectPlacement, "map2_" + b.ToString() + "_" + k.ToString(), map.TileColumnCount);
                 }
 
                 Log("Tiles generated: " + counter.ToString());
@@ -75,7 +86,7 @@ namespace TileMapMangerExample
                 Log("Update2 time: " + update2.ToString() + " seconds");
 
                 screenMap = map.GetTileMapInScreen(800, 600);
-                SaveToFile(screenMap, "screenMap2_" + b.ToString(), 800 / 50);
+                SaveToFile(screenMap, null,"screenMap2_" + b.ToString(), 800 / 50);
 
                 for (int i = 0; i < updateIterations; i++)
                 {
@@ -145,7 +156,7 @@ namespace TileMapMangerExample
             }
         }
 
-        private static int SaveToFile(Tile[] map, string fileName, int columnCount)
+        private static int SaveToFile(Tile[] map, ObjectTile[] objects, string fileName, int columnCount)
         {
             int counter = -1;
             List<string> lines = new List<string>();
@@ -162,8 +173,20 @@ namespace TileMapMangerExample
                         sb.Clear();
                     }
                 }
-
+                
                 sb.Append(Convert.ToInt32(map[(counter * columnCount) + mod].Id.ToString()));
+            }
+            if(sb.Length > 0)
+                lines.Add(sb.ToString());
+
+            if (objects != null)
+            {
+                foreach (ObjectTile item in objects)
+                {
+                    int row, column;
+                    TileMathHelper.ToPosition(item.TileIndex, columnCount, out row, out column);
+                    lines[row] = lines[row].Remove(column, 1).Insert(column, item.ObjectId.ToString());
+                }
             }
 
             System.IO.File.WriteAllLines(fileName + ".txt", lines.ToArray());

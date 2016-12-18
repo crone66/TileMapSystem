@@ -44,6 +44,7 @@
     <Compile Include="Direction.cs" />
     <Compile Include="GeneratorSettings.cs" />
     <Compile Include="GridEventArgs.cs" />
+    <Compile Include="ObjectTile.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="StreamedTileMap.cs" />
     <Compile Include="Tile.cs" />

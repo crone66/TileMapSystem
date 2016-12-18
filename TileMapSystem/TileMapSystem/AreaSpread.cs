@@ -55,6 +55,7 @@ namespace TileMapSystem
     /// </summary>
     public enum SpreadOption
     {
+        None,
         Line,
         Circle,
         Rectangle

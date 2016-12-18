@@ -111,11 +111,13 @@ namespace TileMapSystem
 
             Tile[][] edgeOverrides = new Tile[9][];
             Tile[][] maps = new Tile[9][];
+            List<ObjectTile>[] objectTiles = new List<ObjectTile>[9];
             for (int i = 0; i < maps.Length; i++)
             {
                 edgeOverrides[i] = new Tile[size];
                 maps[i] = new Tile[size];
-            }
+                objectTiles[i] = new List<ObjectTile>();
+            }      
 
             int[] suroundingGrids = CreateSuroundings(maps.Length, gridColumn, gridRow, gridsPerRow);
 
@@ -144,29 +146,35 @@ namespace TileMapSystem
                                     break;
                                 }
                             case LayerType.Biome:
-                                CreateLayerTwo();
+                                CreateBiomeLayer(i, maps, layerAreas[j]);
                                 break;
                             case LayerType.Paths:
                                 CreateLayerFour();
                                 break;
                             case LayerType.PointsOfInterest:
-                                CreateLayerThree();
+                                {
+                                    objectTiles[i].AddRange(CreateObjectLayer(maps[i], layerAreas[j], tilesPerColumn, tilesPerColumn));
+                                }
                                 break;
                         }
                     }
                 }
+
+                if(currentLayerType == LayerType.Height)
+                {
+                    //DefragementMap and add edgenoise
+                    DefragmentMaps(maps, areas, suroundingGrids, (int)tilesPerGrid, (int)tilesPerGrid);
+
+                    //Merge edgeOverrides
+                    for (int k = 0; k < maps.Length; k++)
+                    {
+                        maps[k] = TileMathHelper.MergeMaps(maps[k], edgeOverrides[k]);
+                    }
+
+                }
             }
 
-            //DefragementMap and add edgenoise
-            DefragmentMaps(maps, areas, suroundingGrids, (int)tilesPerGrid, (int)tilesPerGrid);
-
-            //Merge edgeOverrides
-            for (int k = 0; k < maps.Length; k++)
-            {
-                maps[k] = TileMathHelper.MergeMaps(maps[k], edgeOverrides[k]);
-            }
-
-            CreateTileMapParts(maps, suroundingGrids, gridsPerRow, streamedTileMap);
+            CreateTileMapParts(maps, objectTiles, suroundingGrids, gridsPerRow, streamedTileMap);
 
             return streamedTileMap;
         }
@@ -216,7 +224,7 @@ namespace TileMapSystem
         /// <param name="suroundingGrids">Ids of all surrounding grids</param>
         /// <param name="gridsPerRow">Number grids per row</param>
         /// <param name="streamedTileMap">A reference to a streamedTileMap</param>
-        private void CreateTileMapParts(Tile[][] maps, int[] suroundingGrids, int gridsPerRow, StreamedTileMap streamedTileMap)
+        private void CreateTileMapParts(Tile[][] maps, List<ObjectTile>[] objectTiles, int[] suroundingGrids, int gridsPerRow, StreamedTileMap streamedTileMap)
         {
             //create TileMapPart
             for (int i = 0; i < maps.Length; i++)
@@ -230,7 +238,7 @@ namespace TileMapSystem
                 gridRow = TileMathHelper.FixTileIndex(gridRow, gridsPerRow);
                 gridColumn = TileMathHelper.FixTileIndex(gridColumn, gridsPerRow);
 
-                TileMapPart part = new TileMapPart(gridId, maps[i], null, null, gridColumn, gridRow);
+                TileMapPart part = new TileMapPart(gridId, maps[i], null, objectTiles[i].ToArray(), gridColumn, gridRow);
                 streamedTileMap.Add(part);
             }
 
@@ -680,14 +688,31 @@ namespace TileMapSystem
                 }
             }
         }
-        private void CreateLayerTwo()
-        {
 
-        }
-
-        private void CreateLayerThree()
+        private void CreateBiomeLayer(int mapIndex, Tile[][] maps, AreaSpread area)
         {
             
+        }
+
+        private ObjectTile[] CreateObjectLayer(Tile[] map, AreaSpread area, int rowCount, int columnCount)
+        {
+            List<ObjectTile> tiles = new List<ObjectTile>();
+            float tilesChanged = 0;
+            float tileCount = rowCount * columnCount;
+            while (tilesChanged / tileCount < area.Percentage)
+            {
+                int row = random.Next(0, rowCount);
+                int column = random.Next(0, columnCount);
+                int fieldIndex = TileMathHelper.ToIndex(row, column, columnCount);
+
+                if (map[fieldIndex].Id == 0)
+                {
+                    ObjectTile tile = new ObjectTile(fieldIndex, area.Id);
+                    tiles.Add(tile);
+                    tilesChanged++;
+                }
+            }
+            return tiles.ToArray();
         }
 
         private void CreateLayerFour()

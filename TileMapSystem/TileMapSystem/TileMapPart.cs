@@ -12,7 +12,7 @@ namespace TileMapSystem
     {
         public Tile[] MapSurface;
         public byte[] PathPlacement;
-        public byte[] ObjectPlacement;
+        public ObjectTile[] ObjectPlacement;
         public int GridColumn;
         public int GridRow;
         public int Id;
@@ -26,7 +26,7 @@ namespace TileMapSystem
         /// <param name="objectPlacement">Object placement information of the grid</param>
         /// <param name="gridColumn">grid column index</param>
         /// <param name="gridRow">grid row index</param>
-        public TileMapPart(int id, Tile[] mapSurface, byte[] pathPlactment, byte[] objectPlacement, int gridColumn, int gridRow)
+        public TileMapPart(int id, Tile[] mapSurface, byte[] pathPlactment, ObjectTile[] objectPlacement, int gridColumn, int gridRow)
         {
             Id = id;
             MapSurface = mapSurface;
