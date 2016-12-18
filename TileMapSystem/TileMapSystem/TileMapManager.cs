@@ -88,6 +88,8 @@ namespace TileMapSystem
             UnSub();
             currentLevel = generator.GenerateMap(settings, spreads, tileColumn, tileRow);
             Sub();
+
+            GridChanged?.Invoke(this, new GridEventArgs(currentLevel.GridRow, currentLevel.GridColumn, -1, -1, false));
         }
 
         /// <summary>
@@ -108,6 +110,8 @@ namespace TileMapSystem
             UnSub();
             currentLevel = generator.GenerateMap(settings, spreads, tileColumn, tileRow);
             Sub();
+
+            GridChanged?.Invoke(this, new GridEventArgs(currentLevel.GridRow, currentLevel.GridColumn, -1, -1, false));
         }
 
         /// <summary>
@@ -126,6 +130,8 @@ namespace TileMapSystem
             UnSub();
             currentLevel = generator.GenerateMap(tileColumn, tileRow);
             Sub();
+
+            GridChanged?.Invoke(this, new GridEventArgs(currentLevel.GridRow, currentLevel.GridColumn, -1, -1, false));
         }
 
         /// <summary>
@@ -140,6 +146,8 @@ namespace TileMapSystem
                 maps.Add(currentLevel);
             }
             currentLevel = map;
+
+            GridChanged?.Invoke(this, new GridEventArgs(currentLevel.GridRow, currentLevel.GridColumn, -1, -1, false));
         }
 
         /// <summary>
