@@ -126,6 +126,19 @@ namespace TileMapSystem
             }
         }
 
+        public int CurrentMapIndex
+        {
+            get
+            {
+                return currentMapIndex;
+            }
+
+            private set
+            {
+                currentMapIndex = value;
+            }
+        }
+
         /// <summary>
         /// Initzializes a new streamed tile map
         /// </summary>
@@ -209,7 +222,7 @@ namespace TileMapSystem
 
             TryMapUpdate(newGridRow, newGridColumn);
 
-            currentMapIndex = maps.FindIndex(m => m.Id == currentMapId);
+            CurrentMapIndex = maps.FindIndex(m => m.Id == currentMapId);
 
             if ((newGridRow != GridRow || newGridColumn != GridColumn) && !newMapRequested)
             {
@@ -246,7 +259,7 @@ namespace TileMapSystem
                 int columnIndex = 0;
                 for (int c = negColumn; c < posColumn; c++)
                 {
-                    int newMapIndex = currentMapIndex;
+                    int newMapIndex = CurrentMapIndex;
                     int realRow = r;
                     int realColumn = c;
                     if (TileMathHelper.IsOutOfRange(r, c, TileRowCount, TileColumnCount))
@@ -406,7 +419,7 @@ namespace TileMapSystem
                     List<TileMapPart> oldMap = maps;
                     maps = newMap.maps;
                     newMap.maps = oldMap;
-                    currentMapIndex = 4;
+                    CurrentMapIndex = 4;
                     newMapAvalible = false;
                     newMapRequested = false;
                     GridChanged?.Invoke(this, new GridEventArgs(GridRow, GridColumn, newMap.maps[4].GridRow, newMap.maps[4].GridColumn, !newMapRequested));
